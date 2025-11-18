@@ -1,0 +1,275 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #ffffff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+}
+
+.header {
+    background: darkblue;
+    padding: 1rem 2rem;
+    color: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header .logo {
+    height: 60px;
+    width: 60px;
+    object-fit: contain;
+    background: white;
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.header h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+
+.header-right {
+    margin-left: auto;
+    text-align: right;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header-user {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    color: white;
+    font-size: 0.9rem;
+}
+
+.header-user #dateTime {
+    display: inline-flex;
+    gap: 5px;
+    font-size: 0.7rem;
+}
+
+.header-profile {
+    height: 45px;
+    width: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid white;
+}
+
+.row.g-0 {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 1.25rem;
+    margin: 1.5rem;
+}
+
+.card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    background: white;
+    height: 100%;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 2px solid #e5e7eb;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #000000ff;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.card-header i {
+    font-size: 1.25rem;
+    color: #1e40af;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.form-control {
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: #1e3a8a;
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+    outline: none;
+}
+
+.form-buttons {
+        margin-top: 1.25rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+}
+
+.form-buttons button {
+    flex: 1;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.btn-custom {
+    background: darkblue;
+    color: white;
+    border: none;
+    font-size: 0.9rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.btn-custom:hover {
+    background: #0038eeff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: white;
+}
+
+.btn-danger {
+    background: #dc2626;
+}
+
+.btn-danger:hover {
+    background: #ef4444;
+}
+
+.btn-secondary {
+    background: #4b5563;
+}
+
+.btn-secondary:hover {
+    background: #6b7280;
+}
+
+.table-container {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.table thead {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+    color: white;
+}
+
+.table thead th {
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-align: center;
+    border: none;
+    text-transform: uppercase;
+    padding: 0.9rem;
+}
+
+.table tbody td {
+    padding: 0.8rem;
+    vertical-align: middle;
+    text-align: center;
+    border-color: #e5e7eb;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f8fafc !important;
+    cursor: pointer;
+    transform: scale(1.001);
+}
+
+.table tbody tr.selected {
+  background-color: #dbeafe !important;
+}
+
+.pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.pagination-controls .btn-outline-secondary {
+    border: 1.5px solid #e5e7eb;
+    color: #6b7280;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.pagination-controls .btn-outline-secondary:hover {
+    background: #1e3a8a;
+    border-color: #1e3a8a;
+    color: white;
+}
+
+.page-info {
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+.checkbox-cell {
+    width: 50px;
+    text-align: center;
+    align-content: center;
+}
+
+input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: #1e3a8a;
+}
+
+.no-records {
+    padding: 3rem;
+    text-align: center;
+    color: #6b7280;
+    font-size: 1rem;
+}
+
+.no-records i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+}
+
+.rowCheckbox,
+#selectAll {
+    display: block;
+    margin: auto;
+    accent-color: #1e3a8a;
+}
+
+@media (max-width: 992px) {
+    .row.g-0 {
+        flex-direction: column;
+    }
+    .form-buttons {
+        flex-direction: column;
+    }
+}

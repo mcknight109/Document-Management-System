@@ -1,0 +1,197 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body { 
+    background: #ffffff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+}
+
+.header {
+    background: darkblue;
+    padding: 1rem 2rem;
+    color: white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header .logo {
+    height: 60px;
+    width: 60px;
+    object-fit: contain;
+    background: white;
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+
+.header h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+
+.header-right {
+    margin-left: auto;
+    text-align: right;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header-user {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    color: white;
+    font-size: 0.9rem;
+}
+
+.header-user #dateTime {
+    display: inline-flex;
+    gap: 5px;
+    font-size: 0.7rem;
+}
+
+.header-profile {
+    height: 45px;
+    width: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid white;
+}
+
+.main-container {
+    padding: 1rem;
+    max-width: 1920px;
+    margin: 0 auto;
+}
+
+.row.g-0 {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 1.25rem;
+    margin: 1.5rem;
+}
+
+.card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0px 4px 20px rgba(0,0,0,0.1);
+    overflow: hidden;
+    background: white;
+    height: 100%;
+}
+
+.bg-primary {
+    background-color: darkblue !important;
+}
+
+.text-primary {
+    opacity: 1;
+    color: rgb(17 17 147) !important;
+}
+
+
+.profile-menu {
+    position: absolute;
+    top: 55px;
+    right: 0;
+    width: 180px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    display: none;
+    z-index: 1000;
+    overflow: hidden;
+    animation: fadeIn 0.2s ease-out;
+    font-family: "Segoe UI", sans-serif;
+}
+
+.profile-menu-arrow {
+    position: absolute;
+    top: -8px;
+    right: 14px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid #fff;
+}
+
+.profile-menu ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.profile-menu ul li {
+    border-bottom: 1px solid #eee;
+}
+
+.profile-menu ul li:last-child {
+    border-bottom: none;
+}
+
+.profile-menu ul li a {
+    display: flex;
+    align-items: center;
+    color: #1e3a8a;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}   
+
+.profile-menu ul li a i {
+    margin-right: 10px;
+    font-size: 1rem;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s;
+}
+
+.profile-menu ul li a:hover i {
+    background: darkblue;
+    color: #fff;
+}
+
+.profile-menu ul li a:hover {
+    color: darkblue;
+    background-color: #d6d6d6ff;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+input:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+}
+
+label i {
+    width: 20px;
+    text-align: center;
+}
+
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+button i {
+    transition: transform 0.2s;
+}
+
+button:hover i {
+    transform: rotate(-10deg);
+}
