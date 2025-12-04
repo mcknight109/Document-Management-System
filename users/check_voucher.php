@@ -11,7 +11,7 @@ if (!isset($_SESSION['username'])) {
 
 // Fetch user's full name from the database
 $user_id = $_SESSION['user_id'];
-$query = $conn->prepare("SELECT first_name, middle_initial, last_name, username FROM users WHERE id = ?");
+$query = $conn->prepare("SELECT transmittal_id, first_name, middle_initial, last_name, username, permissions FROM users WHERE id = ?");
 $query->bind_param("i", $user_id);
 $query->execute();
 $result = $query->get_result();
@@ -34,18 +34,17 @@ if ($result->num_rows > 0) {
     $full_name = $_SESSION['username'] ?? "User";
 }
 
+// Decode permissions JSON into array
+$user_permissions = [];
+if (!empty($user['permissions'])) {
+    $user_permissions = json_decode($user['permissions'], true);
+}
+
+// Check if user has voucher_records permission
+$canAccessCheck = in_array("check_records", $user_permissions);
+
 date_default_timezone_set('Asia/Manila');
 $currentDate = date("M d, Y");
-
-$recordedBy = $_SESSION['username'];
-
-// Fetch user ID
-$stmt = $conn->prepare("SELECT id FROM users WHERE username = ?");
-$stmt->bind_param("s", $recordedBy);
-$stmt->execute();
-$result = $stmt->get_result();
-$user = $result->fetch_assoc();
-$userId = $user['id'] ?? 0;
 ?>
 
 <!DOCTYPE html>
@@ -59,36 +58,7 @@ $userId = $user['id'] ?? 0;
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
-.action-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 8px;
-    color: #000000ff;
-    background-color: #f0f0f0ff;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    }
 
-    .action-btn i {
-        font-size: 1rem;
-    }
-
-    .action-btn:hover {
-        background-color: darkblue;
-        transform: translateY(-1px);
-        box-shadow: 0 3px 6px rgba(0,0,0,0.15);
-        color: #ffffff;
-    }
-
-    .action-btn:active {
-        transform: translateY(0);
-        box-shadow: none;
-    }
 </style>
 </head>
 <body>
@@ -120,107 +90,134 @@ $userId = $user['id'] ?? 0;
     </div>
 </div>
 
-<div class="navbar">
-    <div class="left">
-        <i class="fa-solid fa-folder-open" style="color:var(--primary-blue);"></i>
-        <label>Transmittal ID:</label><span>2294</span>
-
+    <div class="navbar">
+        <div class="left">
+            <i class="fa-solid fa-folder-open" style="color:var(--primary-blue);"></i>
+            <label>Transmittal ID:</label>
+            <span><?php echo htmlspecialchars($user['transmittal_id']); ?></span>
+            <span>Check Records Management</span>
+        </div>
+        <div class="right">
+            <div class="search-container">
+                <input type="text" id="tableSearch" placeholder="Search records..." />
+                <button id="searchBtn"><i class="bi bi-search"></i></button>
+            </div>
+        </div>
     </div>
-    <div class="right">
-        <label for="">Check Type:</label>
-        <input type="text" id="voucherType" value="Check">
+
+    <div class="main-content">
+        <?php
+            $query = $conn->prepare("SELECT * FROM documents WHERE user_id = ?");
+            $query->bind_param("i", $userId);
+            $query->execute();
+            $result = $query->get_result();
+        ?>
+        <div class="table-container">
+            <table id="recordsTable">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll"></th>
+                        <th>Control No.</th>
+                        <th>Payee</th>
+                        <th>Bank Channel</th>
+                        <th>Check Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <?php 
+                        $result = $conn->query("SELECT * FROM documents WHERE date_out IS NOT NULL");
+                        while ($row = $result->fetch_assoc()): ?>
+                    <tr>
+                        <td><input type="checkbox" class="record-checkbox" value="<?= $row['id'] ?>"></td>
+                        <td><?= htmlspecialchars($row['control_no']) ?></td>
+                        <td><?= htmlspecialchars($row['payee']) ?></td>
+                        <td><?= htmlspecialchars($row['bank_channel'] ?? '') ?></td>
+                        <td><?= $row['check_date'] ? date('M d, Y h:i A', strtotime($row['check_date'])) : '-' ?></td>
+                        <td><?= htmlspecialchars($row['status']) ?></td>
+                        <td>
+                            <button class="action-btn dateOutBtn" data-id="<?= $row['id'] ?>" title="Actions">
+                                <i class="bi bi-list-check"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
+        <div id="actionModal" class="action-modal">
+            <ul>
+                <li id="checkoutOption"><i class="bi bi-box-arrow-right"></i> Check Out</li>
+                <li id="checkReleaseOption"><i class="bi bi-file-earmark-check"></i> Check Release</li>
+            </ul>
+        </div>
+        <div class="footer">
+            <button>&laquo;</button>
+            <button>&lsaquo;</button>
+            <button>&rsaquo;</button>
+            <button>&raquo;</button>
+        </div>
     </div>
-</div>
 
-<div class="main-content">
-<?php
-$query = $conn->prepare("SELECT * FROM documents WHERE user_id = ?");
-$query->bind_param("i", $userId);
-$query->execute();
-$result = $query->get_result();
-?>
-<div class="table-container">
-    <table id="recordsTable">
-        <thead>
-            <tr>
-                <th><input type="checkbox" id="selectAll"></th>
-                <th>Control No.</th>
-                <th>Payee</th>
-                <th>Check Date</th>
-                <th>Fund Type</th>
-                <th>Bank Channel</th>
-                <th>Date Out 2</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php while ($row = $result->fetch_assoc()): ?>
-            <tr>
-                <td><input type="checkbox" class="record-checkbox" value="<?= $row['id'] ?>"></td>
-                <td><?= htmlspecialchars($row['control_num']) ?></td>
-                <td><?= htmlspecialchars($row['payee']) ?></td>
-                <td><?= $row['date_in'] ? date('M d, Y h:i A', strtotime($row['date_in'])) : '-' ?></td>
-                <td><?= htmlspecialchars($row['fund_type'] ?? '') ?></td>
-                <td><?= htmlspecialchars($row['bank_channel'] ?? '') ?></td>
-                <td><?= $row['date_out_2'] ? date('M d, Y h:i A', strtotime($row['date_out_2'])) : '-' ?></td>
-                <td>
-                    <button class="action-btn dateOutBtn" data-id="<?= $row['id'] ?>" title="Actions">
-                        <i class="bi bi-pencil-square"></i>
-                    </button>
-                </td>
-            </tr>
-            <?php endwhile; ?>
-        </tbody>
-    </table>
-</div>
+        <div class="button-panel">
+            <button onclick="openCheckRecord()" <?= !$canAccessCheck ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '' ?>><i class="fa-solid fa-plus"></i> Check Record</button>
+            <!-- <button onclick="deleteSelected()" <?= !$canAccessCheck ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '' ?>><i class="fa-solid fa-trash"></i> Delete Record</button> -->
+            <button onclick="printDoc()" <?= !$canAccessCheck ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '' ?>><i class="fa-solid fa-print"></i> Check Print</button>
+            <button onclick="printDoc()" <?= !$canAccessCheck ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '' ?>><i class="fa-solid fa-print"></i> Transmittal Print</button>
+            <button onclick="window.location.href='../index.php'" style="background-color: #4b5563;"><i class="fa-solid fa-xmark"></i> Exit</button>
+        </div>
+    </div>
 
-<div class="button-panel">
-    <button onclick="openCheckRecord()"><i class="fa-solid fa-plus"></i> Check Record</button>
-    <button onclick="deleteSelected()"><i class="fa-solid fa-trash"></i> Delete Record</button>
-    <button onclick="printDoc()"><i class="fa-solid fa-print"></i> Print Preview</button>
-    <button onclick="window.location.href='../index.php'"><i class="fa-solid fa-xmark"></i> Exit</button>
-</div>
-</div>
+    <!-- Check Record Modal -->
+    <div id="checkRecordModal" class="modern-modal">
+        <div class="modern-modal-content">
+            <h2><i class="fa-solid fa-clipboard-check"></i> Check Record</h2>
+            <form id="checkForm" autocomplete="off">
+                <input type="hidden" id="docId" name="docId">
 
-<!-- ✅ Check Record Modal -->
-<div id="checkRecordModal" class="modern-modal">
-  <div class="modern-modal-content">
-    <h2><i class="fa-solid fa-clipboard-check"></i> Check Record</h2>
-    <form id="checkForm" autocomplete="off">
-      <input type="hidden" id="docId" name="docId">
+                <div class="form-group">
+                    <label>Control No.</label>
+                    <input type="text" name="control_no" id="control_no" class="form-control" readonly 
+                        style="background:#e9ecef; cursor:not-allowed;" required
+                        value="<?php echo $nextConID; ?>">
+                </div>
 
-      <div class="form-group">
-        <label>Control No.</label>
-        <input type="text" id="controlNum" readonly>
-      </div>
+                <div class="form-group">
+                    <label>Payee</label>
+                    <input type="text" id="payee" readonly style="background:#e9ecef; cursor:not-allowed;">
+                </div>
 
-      <div class="form-group">
-        <label>Payee</label>
-        <input type="text" id="payee" readonly>
-      </div>
+                <div class="form-group">
+                    <label>Date In</label>
+                    <input type="text" id="dateIn" readonly style="background:#e9ecef; cursor:not-allowed;">
+                </div>
 
-      <div class="form-group">
-        <label>Date In</label>
-        <input type="text" id="dateIn" readonly>
-      </div>
+                <hr>
 
-      <div class="form-group">
-        <label>Fund Type</label>
-        <input type="text" id="fundType" name="fundType" placeholder="Enter fund type" required>
-      </div>
+                <div class="form-group">
+                    <label>Check Number</label>
+                    <input type="number" id="checkNumber" name="checkNumber" readonly>
+                </div>
 
-      <div class="form-group">
-        <label>Bank Channel</label>
-        <input type="text" id="bankChannel" name="bankChannel" placeholder="Enter bank channel" required>
-      </div>
+                <div class="form-group">
+                    <label>Check Date</label>
+                    <input type="date" id="checkDate" name="checkDate">
+                </div>
 
-      <div class="modal-actions">
-        <button type="button" class="cancel-btn" onclick="closeModal()">Cancel</button>
-        <button type="submit" class="save-btn"><i class="fa-solid fa-floppy-disk"></i> Save</button>
-      </div>
-    </form>
-  </div>
-</div>
+                <div class="form-group position-relative">
+                    <label>Bank Channel</label>
+                    <input type="text" name="bankChannel" id="bankChannel" placeholder="Enter or select a bank channel" autocomplete="off" required>
+                    <div id="bankChannelSuggestions" class="suggestions-dropdown"></div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="cancel-btn" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="save-btn"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 <script src="../date.js"></script>
 <script>
@@ -252,107 +249,315 @@ $result = $query->get_result();
         document.querySelectorAll(".record-checkbox").forEach(cb => cb.checked = e.target.checked);
     });
 
-    // Delete Selected
-    function deleteSelected() {
-        const selected = document.querySelectorAll(".record-checkbox:checked");
+    document.querySelectorAll("#recordsTable tbody tr").forEach(row => {
+        row.addEventListener("click", e => {
+            // Avoid toggling checkbox if the click is on a button or input
+            if (e.target.tagName === "BUTTON" || e.target.tagName === "INPUT") return;
 
-        if (selected.length === 0) {
-            Swal.fire("No Selection", "Please select at least one record to delete.", "info");
-            return;
-        }
-
-        let ids = [];
-        let controlNumbers = [];
-
-        selected.forEach(cb => {
-            ids.push(cb.value);
-            const row = cb.closest("tr");
-            controlNumbers.push(row.cells[1].textContent.trim());
-        });
-
-        // Join all Control Numbers as a string
-        const displayText = `<b>${controlNumbers.join(", ")}</b>`;
-
-        Swal.fire({
-            title: "Confirm Deletion",
-            html: `Are you sure you want to delete the following record(s)?<br>${displayText}`,
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#d33",
-            cancelButtonColor: "#3085d6",
-            confirmButtonText: "Yes, delete"
-        }).then(result => {
-            if (result.isConfirmed) {
-                fetch("Controllers/CheckController.php", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: "delete_ids=" + encodeURIComponent(JSON.stringify(ids))
-                })
-                .then(res => res.text())
-                .then(resp => {
-                    Swal.fire("Deleted!", "Record(s) deleted successfully.", "success")
-                        .then(() => location.reload());
-                });
+            const checkbox = row.querySelector(".record-checkbox");
+            if (checkbox) {
+                checkbox.checked = !checkbox.checked; // toggle checkbox
             }
-        });
-    }
-
-
-    // Open Check Record Modal
-    function openCheckRecord() {
-        const selected = document.querySelector(".record-checkbox:checked");
-        if (!selected) {
-            Swal.fire("Select a record", "Please select one record to check.", "info");
-            return;
-        }
-
-        const row = selected.closest("tr");
-        document.getElementById("docId").value = selected.value;
-        document.getElementById("controlNum").value = row.cells[1].textContent;
-        document.getElementById("payee").value = row.cells[2].textContent;
-
-        document.getElementById("checkRecordModal").style.display = "flex";
-    }
-
-    // Close Modal
-    function closeModal() {
-        document.getElementById("checkRecordModal").style.display = "none";
-    }
-
-    // Save Check Record (AJAX)
-    document.getElementById("checkForm").addEventListener("submit", e => {
-        e.preventDefault();
-        const data = new FormData(e.target);
-        fetch("Controllers/CheckController.php?action=checkrecord", {
-            method: "POST",
-            body: data
-        })
-        .then(res => res.text())
-        .then(resp => {
-            Swal.fire("Success", "Record successfully checked!", "success").then(() => location.reload());
         });
     });
 
-    // Date Out 2 Button
-    document.querySelectorAll(".dateOutBtn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const id = btn.dataset.id;
-            Swal.fire({
-                title: "Choose Action",
-                icon: "warning",
-                text: "Mark this as Date Out?",
-                showDenyButton: true,
-                confirmButtonText: "Mark as Date Out 2",
-                denyButtonText: "Cancel"
-            }).then(result => {
-                if (result.isConfirmed) {
-                    fetch(`Controllers/CheckController.php?action=dateout2&id=${id}`)
-                    .then(() => Swal.fire("Success", "Marked as Date Out 2", "success").then(() => location.reload()));
-                } else if (result.isDenied) {
-                    Swal.fire("Cancelled", "No changes made", "info");
+    // Delete Selected
+    // function deleteSelected() {
+    //     const selected = document.querySelectorAll(".record-checkbox:checked");
+
+    //     if (selected.length === 0) {
+    //         Swal.fire("No Selection", "Please select at least one record to delete.", "info");
+    //         return;
+    //     }
+
+    //     let ids = [];
+    //     let controlNumbers = [];
+
+    //     selected.forEach(cb => {
+    //         ids.push(cb.value);
+    //         const row = cb.closest("tr");
+    //         controlNumbers.push(row.cells[1].textContent.trim());
+    //     });
+
+    //     // Join all Control Numbers as a string
+    //     const displayText = `<b>${controlNumbers.join(", ")}</b>`;
+
+    //     Swal.fire({
+    //         title: "Confirm Deletion",
+    //         html: `Are you sure you want to delete the following record(s)?<br>${displayText}`,
+    //         icon: "warning",
+    //         showCancelButton: true,
+    //         confirmButtonColor: "#d33",
+    //         cancelButtonColor: "#3085d6",
+    //         confirmButtonText: "Yes, delete"
+    //     }).then(result => {
+    //         if (result.isConfirmed) {
+    //             fetch("Controllers/CheckController.php", {
+    //                 method: "POST",
+    //                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    //                 body: "delete_ids=" + encodeURIComponent(JSON.stringify(ids))
+    //             })
+    //             .then(res => res.text())
+    //             .then(resp => {
+    //                 Swal.fire("Deleted!", "Record(s) deleted successfully.", "success")
+    //                     .then(() => location.reload());
+    //             });
+    //         }
+    //     });
+    // }
+
+    // Open Check Record Modal
+    function openCheckRecord() {
+
+    const selected = document.querySelectorAll(".record-checkbox:checked");
+
+    // No selection
+    if (selected.length === 0) {
+        Swal.fire("No Selection", "Please select one record.", "info");
+        return;
+    }
+
+    // More than 1 selection
+    if (selected.length > 1) {
+        Swal.fire({
+            icon: "error",
+            title: "Multiple Records Selected",
+            text: "You can only check one record at a time.",
+        });
+        return;
+    }
+
+    // Only one selected → OK
+    const docId = selected[0].value;
+
+    fetch(`Controllers/CheckController.php?action=getdoc&id=` + docId)
+        .then(res => res.json())
+        .then(data => {
+
+            document.getElementById("docId").value = data.id;
+            document.getElementById("control_no").value = data.control_no;
+            document.getElementById("payee").value = data.payee;
+            document.getElementById("dateIn").value = data.date_in_formatted;
+
+            // AUTO RANDOM 8-DIGIT CHECK NUMBER
+            let randomCheck = Math.floor(10000000 + Math.random() * 90000000);
+            document.getElementById("checkNumber").value = randomCheck;
+
+            document.getElementById("checkRecordModal").style.display = "flex";
+        });
+    }
+
+    function closeModal() {
+        document.getElementById("checkRecordModal").style.display = "none";
+    }
+</script>
+
+<script>
+    document.getElementById("checkForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        let formData = new FormData(this);
+        formData.append("action", "save_check");
+
+        fetch("Controllers/CheckController.php", {
+            method: "POST",
+            body: formData
+        })
+        .then(res => res.text())
+        .then(resp => {
+
+            if (resp.trim() === "success") {
+                Swal.fire({
+                    icon: "success",
+                    title: "Saved!",
+                    text: "Check record saved successfully."
+                }).then(() => location.reload());
+            } else {
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: "Failed to save check record."
+                });
+            }
+        });
+    });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const actionModal = document.getElementById("actionModal");
+        let currentButton = null;
+
+        document.querySelectorAll(".action-btn.dateOutBtn").forEach(btn => {
+            btn.addEventListener("click", function(e) {
+                e.stopPropagation();
+
+                // Toggle modal if the same button is clicked
+                if (currentButton === this && actionModal.style.display === "block") {
+                    actionModal.style.display = "none";
+                    currentButton = null;
+                    return;
                 }
+
+                currentButton = this;
+
+                const container = this.closest(".table-container");
+                const btnRect = this.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+
+                let top = btnRect.bottom - containerRect.top + container.scrollTop;
+                const modalHeight = actionModal.offsetHeight;
+                if (top + modalHeight > container.scrollHeight) {
+                    top = container.scrollHeight - modalHeight - 5;
+                }   
+
+                let left = container.offsetWidth - 215;
+                if (left < 0) left = 5;
+
+                actionModal.style.top = top + "px";
+                actionModal.style.left = left + "px";
+                actionModal.style.display = "block";
             });
         });
+
+        document.addEventListener("click", function() {
+            actionModal.style.display = "none";
+            currentButton = null;
+        });
+
+        actionModal.addEventListener("click", function(e) {
+            e.stopPropagation();
+        });
+
+        function updateStatus(action) {
+            if (!currentButton) return;
+
+            const docId = currentButton.dataset.id;
+
+            fetch(`Controllers/CheckController.php?action=${action}&id=${docId}`)
+            .then(res => res.text())
+            .then(resp => {
+                resp = resp.trim();
+                if (resp === "success") {
+                    Swal.fire({
+                        icon: "success",
+                        title: "Success!",
+                        text: action === "check_out" ? "Check Out completed." : "Check Released successfully."
+                    }).then(() => location.reload());
+                } else if (resp === "exists") {
+                    Swal.fire({
+                        icon: "warning",
+                        title: "Action Not Allowed",
+                        text: "This document already has a status and cannot be updated."
+                    });
+                } else {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: "Failed to update status."
+                    });
+                }
+            });
+
+            actionModal.style.display = "none";
+            currentButton = null;
+        }
+
+        document.getElementById("checkoutOption").addEventListener("click", function() {
+            updateStatus("check_out");
+        });
+
+        document.getElementById("checkReleaseOption").addEventListener("click", function() {
+            updateStatus("check_release");
+        });
+    });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+
+        function setupDropdown(inputId, dropdownId, items) {
+            const input = document.getElementById(inputId);
+            const container = document.getElementById(dropdownId);
+
+            function showSuggestions(list) {
+                container.innerHTML = "";
+
+                if (list.length === 0) {
+                    container.style.display = "none";
+                    return;
+                }
+
+                list.forEach(item => {
+                    const div = document.createElement("div");
+                    div.textContent = item;
+                    div.onclick = () => {
+                        input.value = item;
+                        container.style.display = "none";
+                    };
+                    container.appendChild(div);
+                });
+
+                container.style.display = "block";
+            }
+
+            function filterSuggestions() {
+                const text = input.value.toLowerCase();
+                const filtered = items.filter(i => i.toLowerCase().includes(text));
+                showSuggestions(filtered);
+            }
+
+            input.addEventListener("input", filterSuggestions);
+            input.addEventListener("focus", () => showSuggestions(items));
+
+            document.addEventListener("click", (e) => {
+                if (!input.contains(e.target) && !container.contains(e.target)) {
+                    container.style.display = "none";
+                }
+            });
+        }
+
+        // Bank Channel suggestions
+        const bankChannels = [
+            <?php
+            $result = $conn->query("SELECT DISTINCT bank_channel FROM documents WHERE bank_channel IS NOT NULL ORDER BY bank_channel ASC");
+            $items = [];
+            while ($row = $result->fetch_assoc()) {
+                if (!empty($row['bank_channel'])) {
+                    $items[] = '"' . addslashes($row['bank_channel']) . '"';
+                }
+            }
+            echo implode(",", $items);
+            ?>
+        ];
+        setupDropdown("bankChannel", "bankChannelSuggestions", bankChannels);
+
+    });
+</script>
+
+<script>
+    // Table search functionality
+    const searchInput = document.getElementById("tableSearch");
+    const searchBtn = document.getElementById("searchBtn");
+    const table = document.getElementById("recordsTable");
+    const tableRows = table.querySelectorAll("tbody tr");
+
+    function filterTable() {
+        const query = searchInput.value.toLowerCase();
+        tableRows.forEach(row => {
+            const rowText = row.textContent.toLowerCase();
+            row.style.display = rowText.includes(query) ? "" : "none";
+        });
+    }
+
+    // Trigger search on button click
+    searchBtn.addEventListener("click", filterTable);
+
+    // Trigger search on Enter key
+    searchInput.addEventListener("keyup", (e) => {
+        if (e.key === "Enter") {
+            filterTable();
+        }
     });
 </script>
 </body>

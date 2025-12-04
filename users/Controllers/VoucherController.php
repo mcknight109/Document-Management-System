@@ -19,51 +19,34 @@ $response = ["success" => false];
 // Main action handler
 switch ($action) {
 
-    // ✅ SAVE new voucher record (from save_record.php)
+    // SAVE new voucher record
     case "save":
-        $control = $data['control_num'] ?? null;
+        $control = $data['control_no'] ?? null;
         $payee = $data['payee'] ?? null;
         $desc = $data['description'] ?? null;
+        $fundType = $data['fund_type'] ?? null;
         $amount = $data['amount'] ?? null;
 
-        if (!$control || !$payee || !$desc || !$amount) {
+        if (!$control || !$payee || !$desc || !$amount || !$fundType) {
             echo json_encode(["success" => false, "error" => "Missing required fields"]);
             exit;
         }
 
-        $sql = "INSERT INTO documents (user_id, control_num, payee, description, amount)
-                VALUES (?, ?, ?, ?, ?)";
+        $dateIn = date('Y-m-d H:i:s'); // Automatically set Date In
+
+        $sql = "INSERT INTO documents (user_id, control_no, payee, description, fund_type, amount, date_in)
+                VALUES (?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("isssd", $user_id, $control, $payee, $desc, $amount);
+        $stmt->bind_param("issssds", $user_id, $control, $payee, $desc, $fundType, $amount, $dateIn);
 
         if ($stmt->execute()) {
-            $response = ["success" => true, "message" => "Record saved successfully"];
+            $response = ["success" => true];
         } else {
             $response = ["success" => false, "error" => $stmt->error];
         }
+    break;
 
-        $stmt->close();
-        break;
-
-    // ✅ Mark as Date In
-    case "mark_in":
-        $ids = $data['ids'] ?? [];
-        if (empty($ids)) {
-            echo json_encode(["success" => false, "error" => "No IDs provided"]);
-            exit;
-        }
-
-        $idList = implode(",", array_map('intval', $ids));
-        $now = date('Y-m-d H:i:s');
-        $sql = "UPDATE documents SET date_in = '$now' WHERE id IN ($idList)";
-        if ($conn->query($sql)) {
-            $response = ["success" => true, "message" => "Marked as Date In"];
-        } else {
-            $response = ["success" => false, "error" => $conn->error];
-        }
-        break;
-
-    // ✅ Mark as Date Out
+    // Mark as Date Out
     case "mark_out":
         $ids = $data['ids'] ?? [];
         if (empty($ids)) {

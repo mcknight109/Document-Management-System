@@ -173,7 +173,18 @@ transition: all 0.2s ease;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-weight: bold;
+}
+
+.ok-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 14px 1.5rem !important;
+}
+
+.ok-card .right i{
+    color: #ffffff;
 }
 
 .card-header i {
@@ -281,6 +292,7 @@ textarea.form-control {
 
 .table {
     margin-bottom: 0;
+    overflow: hidden;
 }
 
 .table thead {
@@ -414,4 +426,77 @@ input[type="checkbox"] {
 .control-disabled {
     pointer-events: none;
     opacity: 0.5;
+}
+
+.search-container {
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #d0d7e0;
+    padding-left: 10px;
+    border-radius: 30px;
+    width: 260px;
+    transition: all 0.25s ease;
+    box-shadow: 0px 1px 3px rgba(0,0,0,0.06);
+}
+
+.search-container:focus-within {
+    border-color: #1e3a8a;
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
+}
+
+.search-container input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 0.8rem;
+    background: transparent;
+    padding-left: 8px;
+}
+
+.search-container button {
+    border: none;
+    background: darkblue;
+    color: #fff;
+    width: 38px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    transition: all 0.25s ease;
+}
+
+.search-container button:hover {
+    background: #0f1f52;
+    transform: rotate(8deg);
+}
+
+.search-container button i {
+    pointer-events: none;
+}
+
+.suggestions-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 150px; /* scroll height */
+    overflow-y: auto;
+    border: 1px solid #ced4da;
+    background: #fff;
+    z-index: 1000;
+    display: none; /* hide by default */
+    border-radius: 0 0 4px 4px;
+}
+
+.suggestions-dropdown div {
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+.suggestions-dropdown div:hover {
+    background-color: #f1f1f1;
 }

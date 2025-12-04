@@ -15,7 +15,7 @@ $recordedBy = $_SESSION['username'];
 
 // Fetch user's full name from the database
 $user_id = $_SESSION['user_id'];
-$query = $conn->prepare("SELECT first_name, middle_initial, last_name, username FROM users WHERE id = ?");
+$query = $conn->prepare("SELECT transmittal_id, first_name, middle_initial, last_name, username, permissions FROM users WHERE id = ?");
 $query->bind_param("i", $user_id);
 $query->execute();
 $result = $query->get_result();
@@ -38,6 +38,25 @@ if ($result->num_rows > 0) {
     $full_name = $_SESSION['username'] ?? "User";
 }
 
+// Decode permissions JSON into array
+$user_permissions = [];
+if (!empty($user['permissions'])) {
+    $user_permissions = json_decode($user['permissions'], true);
+}
+
+// Check if user has voucher_records permission
+$canAccessVoucher = in_array("voucher_records", $user_permissions);
+
+// Fetch next control number
+$controlQuery = $conn->query("SELECT control_no FROM documents ORDER BY id DESC LIMIT 1");
+
+if ($controlQuery->num_rows > 0) {
+    $lastControl = (int)$controlQuery->fetch_assoc()['control_no'];
+    $nextControlNo = $lastControl + 1;
+} else {
+    $nextControlNo = 1; // if table is empty, start at 1
+}
+
 date_default_timezone_set('Asia/Manila');
 $currentDate = date("M d, Y");
 ?>
@@ -53,36 +72,7 @@ $currentDate = date("M d, Y");
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
-.action-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 8px;
-    color: #000000ff;
-    background-color: #f0f0f0ff;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    }
 
-    .action-btn i {
-        font-size: 1rem;
-    }
-
-    .action-btn:hover {
-        background-color: darkblue;
-        transform: translateY(-1px);
-        box-shadow: 0 3px 6px rgba(0,0,0,0.15);
-        color: #ffffff;
-    }
-
-    .action-btn:active {
-        transform: translateY(0);
-        box-shadow: none;
-    }
 </style>
 </head>
 <body>
@@ -116,11 +106,15 @@ $currentDate = date("M d, Y");
 <div class="navbar">
     <div class="left">
         <i class="fa-solid fa-folder-open" style="color:var(--primary-blue);"></i>
-        <label>Transmittal ID:</label><span>2294</span>
+        <label>Transmittal ID:</label>
+        <span><?php echo htmlspecialchars($user['transmittal_id']); ?></span>
+        <span>Voucher Records Management</span>
     </div>
     <div class="right">
-        <label for="">Voucher Type:</label>
-        <input type="text" id="voucherType" value="Disbursement Voucher">
+        <div class="search-container">
+            <input type="text" id="tableSearch" placeholder="Search records..." />
+            <button id="searchBtn"><i class="bi bi-search"></i></button>
+        </div>
     </div>
 </div>
 
@@ -133,6 +127,7 @@ $currentDate = date("M d, Y");
                     <th>Control No.</th>
                     <th>Payee</th>
                     <th>Description</th>
+                    <th>Fund Type</th>
                     <th>Amount</th>
                     <th>Date In</th>
                     <th>Date Out</th>
@@ -141,16 +136,17 @@ $currentDate = date("M d, Y");
             </thead>
             <tbody>
                 <?php
-                $result = $conn->query("SELECT * FROM documents WHERE user_id = $userId");
+                $result = $conn->query("SELECT * FROM documents WHERE date_out IS NULL");
                 while ($row = $result->fetch_assoc()) {
                     $dateIn = $row['date_in'] ? date('M d, Y h:i A', strtotime($row['date_in'])) : '-';
                     $dateOut = $row['date_out'] ? date('M d, Y h:i A', strtotime($row['date_out'])) : '-';
 
                     echo "<tr onclick='openCheckModal(" . json_encode($row) . ")'>
                         <td><input type='checkbox' class='rowCheckbox' value='{$row['id']}' onclick='event.stopPropagation();'></td>
-                        <td>{$row['control_num']}</td>
+                        <td>{$row['control_no']}</td>
                         <td>{$row['payee']}</td>
                         <td>{$row['description']}</td>
+                        <td>{$row['fund_type']}</td>
                         <td>₱" . number_format($row['amount'], 2) . "</td>
                         <td>{$dateIn}</td>
                         <td>{$dateOut}</td>
@@ -172,10 +168,21 @@ $currentDate = date("M d, Y");
         </div>
     </div>
     <div class="button-panel">
-        <button onclick="addRow()"><i class="fa-solid fa-plus"></i> Add Record</button>
-        <button onclick="deleteSelected()"><i class="fa-solid fa-trash"></i> Delete Record</button>
-        <button onclick="printDoc()"><i class="fa-solid fa-print"></i> Print Preview</button>
-        <button onclick="window.location.href='../index.php'"><i class="fa-solid fa-xmark"></i> Exit</button>
+        <button onclick="addRow()" <?= !$canAccessVoucher ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '' ?>>
+            <i class="fa-solid fa-plus"></i> Add Record
+        </button>
+
+        <!-- <button onclick="deleteSelected()" <?= !$canAccessVoucher ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '' ?>>
+            <i class="fa-solid fa-trash"></i> Delete Record
+        </button> -->
+
+        <button onclick="printDoc()" <?= !$canAccessVoucher ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '' ?>>
+            <i class="fa-solid fa-print"></i> Transmittal Print
+        </button>
+
+        <button onclick="window.location.href='../index.php'" style="background-color: #4b5563;">
+            <i class="fa-solid fa-xmark"></i> Exit
+        </button>
     </div>
 </div>
 
@@ -184,19 +191,32 @@ $currentDate = date("M d, Y");
     <div class="modern-modal-content">
         <h2><i class="fa-solid fa-file-circle-plus"></i> Add New Document</h2>
         <form id="addRecordForm" autocomplete="off">
-        <div class="form-group">
+            <div class="form-group">
                 <label>Control No.</label>
-                <input type="number" name="control_num" placeholder="Enter control number" required>
+                <input type="number" 
+                    name="control_no" 
+                    value="<?php echo $nextControlNo; ?>" 
+                    readonly 
+                    style="background:#e9ecef; cursor:not-allowed;">
             </div>
 
-            <div class="form-group">
+            <div class="form-group position-relative">
                 <label>Payee</label>
-                <input type="text" name="payee" placeholder="Enter payee name" required>
+                <input type="text" name="payee" id="payee" 
+                    class="form-control" placeholder="Enter or select a payee" 
+                    autocomplete="off">
+                <div id="payeeSuggestions" class="suggestions-dropdown"></div>
             </div>
 
             <div class="form-group">
                 <label>Description</label>
                 <input type="text" name="description" placeholder="Enter description" required>
+            </div>
+            
+            <div class="form-group position-relative">
+                <label>Fund Type</label>
+                <input type="text" name="fundType" id="fundType" placeholder="Enter or select a fund type" autocomplete="off" required>
+                <div id="fundTypeSuggestions" class="suggestions-dropdown"></div>
             </div>
 
             <div class="form-group">
@@ -214,62 +234,40 @@ $currentDate = date("M d, Y");
         </form>
     </div>
 </div>
-
 <script src="../date.js"></script>
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-    const amountField = document.getElementById("amountInput");
-    let typingTimer;
+    document.addEventListener("DOMContentLoaded", () => {
+        const amountField = document.getElementById("amountInput");
 
-    amountField.addEventListener("input", function () {
-        clearTimeout(typingTimer);
-        
-        // Save cursor position
-        let cursorPos = this.selectionStart;
+        amountField.addEventListener("input", function () {
+            let value = this.value;
 
-        // Remove invalid characters (letters, symbols except dot)
-        let clean = this.value.replace(/[^0-9.]/g, "");
+            // Remove all characters except digits and dot
+            let clean = value.replace(/[^0-9.]/g, "");
 
-        // Allow only one dot
-        let parts = clean.split(".");
-        if (parts.length > 2) {
-            clean = parts[0] + "." + parts[1];
-        }
+            // Allow only one dot
+            const parts = clean.split(".");
+            if (parts.length > 2) {
+                clean = parts[0] + "." + parts[1];
+            }
 
-        this.value = clean;
+            // Split integer and decimal parts
+            let [integerPart, decimalPart] = clean.split(".");
+            
+            // Format integer part with commas
+            if (integerPart) {
+                integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            }
 
-        // Restore cursor position
-        this.setSelectionRange(cursorPos, cursorPos);
-
-        // Apply final formatting when typing stops
-        typingTimer = setTimeout(() => {
-            formatMoney(amountField);
-        }, 450);
-    });
-
-    function formatMoney(input) {
-        if (!input.value) {
-            input.value = "0.00";
-            return;
-        }
-
-        let value = parseFloat(input.value);
-        if (isNaN(value)) {
-            input.value = "0.00";
-            return;
-        }
-
-        input.value = value.toLocaleString("en-US", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
+            // Rejoin decimal part if user has typed dot
+            this.value = decimalPart !== undefined ? integerPart + "." + decimalPart : integerPart;
         });
-    }
 
-    // Before submitting: remove commas
-    document.getElementById("addRecordForm").addEventListener("submit", () => {
-        amountField.value = amountField.value.replace(/,/g, "");
+        // Before submitting: remove commas
+        document.getElementById("addRecordForm").addEventListener("submit", () => {
+            amountField.value = amountField.value.replace(/,/g, "");
+        });
     });
-});
 </script>
 
 <script>
@@ -302,15 +300,11 @@ document.addEventListener("DOMContentLoaded", () => {
             text: "Select what you want to mark for this record.",
             icon: "question",
             showCancelButton: true,
-            showDenyButton: true,
-            confirmButtonText: "Mark as Date In",
-            denyButtonText: "Mark as Date Out",
+            confirmButtonText: "Mark as Date Out",
             cancelButtonText: "Cancel",
-            confirmButtonColor: "#1e3a8a",
-            denyButtonColor: "#0ea5e9",
+            confirmButtonColor: "#0ea5e9",
         }).then(result => {
-            if (result.isConfirmed) markDate("in", [id]);
-            else if (result.isDenied) markDate("out", [id]);
+            if (result.isConfirmed) markDate("out", [id]);
         });
     }
 
@@ -326,7 +320,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // Send request to merged VoucherController.php
+        // Send request to VoucherController.php
         fetch("Controllers/VoucherController.php", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -343,7 +337,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     title: data.message,
                     timer: 1200,
                     showConfirmButton: false
-                }).then(() => location.reload());
+                }).then(() => {
+                    // Dynamically remove rows marked as Date Out
+                    ids.forEach(id => {
+                        const row = document.querySelector(`.rowCheckbox[value='${id}']`)?.closest('tr');
+                        if (row) row.remove();
+                    });
+                });
             } else {
                 Swal.fire("Error", data.error || "Failed to update record.", "error");
             }
@@ -411,6 +411,18 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll(".rowCheckbox").forEach(cb => cb.checked = this.checked);
     });
 
+    document.querySelectorAll("#recordsTable tbody tr").forEach(row => {
+        row.addEventListener("click", e => {
+            // Avoid toggling checkbox if the click is on a button or input
+            if (e.target.tagName === "BUTTON" || e.target.tagName === "INPUT") return;
+
+            const checkbox = row.querySelector(".rowCheckbox"); // <-- use correct class
+            if (checkbox) {
+                checkbox.checked = !checkbox.checked; // toggle checkbox
+            }
+        });
+    });
+
     const modal = document.getElementById("addRecordModal");
     const form = document.getElementById("addRecordForm");
 
@@ -427,10 +439,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const formData = {
             action: "save",
-            control_num: document.querySelector("input[name='control_num']").value,
+            control_no: document.querySelector("input[name='control_no']").value,
             payee: document.querySelector("input[name='payee']").value,
             description: document.querySelector("input[name='description']").value,
-            amount: document.querySelector("input[name='amount']").value
+            fund_type: document.querySelector("input[name='fundType']").value,
+            amount: document.getElementById("amountInput").value.replace(/,/g, "")
         };
 
         fetch("Controllers/VoucherController.php", {
@@ -451,6 +464,107 @@ document.addEventListener("DOMContentLoaded", () => {
                 Swal.fire("Error", data.error || "Failed to add record.", "error");
             }
         });
+    });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+
+        function setupDropdown(inputId, dropdownId, items) {
+            const input = document.getElementById(inputId);
+            const container = document.getElementById(dropdownId);
+
+            function showSuggestions(list) {
+                container.innerHTML = "";
+
+                if (list.length === 0) {
+                    container.style.display = "none";
+                    return;
+                }
+
+                list.forEach(item => {
+                    const div = document.createElement("div");
+                    div.textContent = item;
+                    div.onclick = () => {
+                        input.value = item;
+                        container.style.display = "none";
+                    };
+                    container.appendChild(div);
+                });
+
+                container.style.display = "block";
+            }
+
+            function filterSuggestions() {
+                const text = input.value.toLowerCase();
+                const filtered = items.filter(i => i.toLowerCase().includes(text));
+                showSuggestions(filtered);
+            }
+
+            input.addEventListener("input", filterSuggestions);
+            input.addEventListener("focus", () => showSuggestions(items));
+
+            document.addEventListener("click", (e) => {
+                if (!input.contains(e.target) && !container.contains(e.target)) {
+                    container.style.display = "none";
+                }
+            });
+        }
+
+        // Payee suggestions
+        const payees = [
+            <?php
+            $result = $conn->query("SELECT DISTINCT payee FROM documents ORDER BY payee ASC");
+            $items = [];
+            while ($row = $result->fetch_assoc()) {
+                $items[] = '"' . addslashes($row['payee']) . '"';
+            }
+            echo implode(",", $items);
+            ?>
+        ];
+        setupDropdown("payee", "payeeSuggestions", payees);
+
+        // Fund Type suggestions
+        const fundTypes = [
+            <?php
+            $result = $conn->query("SELECT DISTINCT fund_type FROM documents WHERE fund_type IS NOT NULL ORDER BY fund_type ASC");
+            $items = [];
+            while ($row = $result->fetch_assoc()) {
+                if (!empty($row['fund_type'])) {
+                    $items[] = '"' . addslashes($row['fund_type']) . '"';
+                }
+            }
+            echo implode(",", $items);
+            ?>
+        ];
+        setupDropdown("fundType", "fundTypeSuggestions", fundTypes);
+
+    });
+</script>
+
+<script>
+    // Table search functionality
+    const searchInput = document.getElementById("tableSearch");
+    const searchBtn = document.getElementById("searchBtn");
+    const table = document.getElementById("recordsTable");
+    const tableRows = table.querySelectorAll("tbody tr");
+
+    function filterTable() {
+        const query = searchInput.value.toLowerCase();
+        tableRows.forEach(row => {
+            const rowText = row.textContent.toLowerCase();
+            row.style.display = rowText.includes(query) ? "" : "none";
+        });
+    }
+
+    // Trigger search on button click
+    searchBtn.addEventListener("click", filterTable);
+
+    // Trigger search on Enter key
+    searchInput.addEventListener("keyup", (e) => {
+        if (e.key === "Enter") {
+            filterTable();
+        }
     });
 </script>
 </body>

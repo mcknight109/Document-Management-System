@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
-$query = $conn->prepare("SELECT first_name, middle_initial, last_name, username FROM users WHERE id = ?");
+$query = $conn->prepare("SELECT first_name, middle_initial, last_name, username, permissions FROM users WHERE id = ?");
 $query->bind_param("i", $user_id);
 $query->execute();
 $result = $query->get_result();
@@ -32,36 +32,55 @@ if ($result->num_rows > 0) {
 date_default_timezone_set('Asia/Manila');
 $currentDate = date("M d, Y");
 
+// Decode permissions JSON into array
+$user_permissions = [];
+if (!empty($user['permissions'])) {
+    $user_permissions = json_decode($user['permissions'], true);
+}
+
+// Check if user has voucher_records permission
+$canAccessActivity = in_array("activity_records", $user_permissions);
+
 // Pagination setup
 $limit = 10; // records per page
 $page = isset($_GET['page']) && is_numeric($_GET['page']) ? intval($_GET['page']) : 1;
 $offset = ($page - 1) * $limit;
 
 // Count total records
-$countQuery = $conn->prepare("SELECT COUNT(*) AS total FROM activity_designs WHERE user_id = ?");
-$countQuery->bind_param("i", $user_id);
+$countQuery = $conn->prepare("SELECT COUNT(*) AS total FROM activity_designs");
 $countQuery->execute();
 $totalResult = $countQuery->get_result()->fetch_assoc();
 $totalRecords = $totalResult['total'];
 $totalPages = ceil($totalRecords / $limit);
 
 // Fetch paginated records
-$activitiesQuery = $conn->prepare("SELECT * FROM activity_designs WHERE user_id = ? ORDER BY id DESC");
-$activitiesQuery->bind_param("i", $user_id);
+$activitiesQuery = $conn->prepare("SELECT * FROM activity_designs ORDER BY id DESC");
 $activitiesQuery->execute();
 $activities = $activitiesQuery->get_result();
-?>
 
+// Get the next ConID
+$nextConID = 1; // default if table is empty
+$conQuery = $conn->prepare("SELECT control_no FROM activity_designs ORDER BY id DESC LIMIT 1");
+$conQuery->execute();
+$conResult = $conQuery->get_result();
+if ($conResult->num_rows > 0) {
+    $lastCon = $conResult->fetch_assoc();
+    $nextConID = intval($lastCon['control_no']) + 1;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Activity Design Records</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="../assets/css/users/activity_design.css">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Activity Design Records</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/users/activity_design.css">
+<style>
+
+</style>
 </head>
 <body>
 
@@ -97,9 +116,17 @@ $activities = $activitiesQuery->get_result();
         <!-- LEFT SIDE: Table -->
         <div class="col-md-8 d-flex">
             <div class="card flex-fill">
-                <div class="card-header">
-                    <i class="bi bi-table"></i>
-                    Activity Design Records
+                <div class="card-header ok-card">
+                    <div class="left">
+                        <i class="bi bi-table"></i>
+                        Activity Design Records
+                    </div>
+                    <div class="right">
+                        <div class="search-container">
+                            <input type="text" id="tableSearch" placeholder="Search records..." />
+                            <button id="searchBtn"><i class="bi bi-search"></i></button>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body d-flex flex-column">
                     <!-- Pagination Controls -->
@@ -131,11 +158,6 @@ $activities = $activitiesQuery->get_result();
                             </thead>
                             <tbody id="recordsTableBody">
                                 <?php
-                                $activitiesQuery = $conn->prepare("SELECT * FROM activity_designs WHERE user_id = ? ORDER BY id DESC");
-                                $activitiesQuery->bind_param("i", $user_id);
-                                $activitiesQuery->execute();
-                                $activities = $activitiesQuery->get_result();
-
                                 if ($activities->num_rows > 0) {
                                     while ($row = $activities->fetch_assoc()) {
                                         echo "<tr>
@@ -148,8 +170,13 @@ $activities = $activitiesQuery->get_result();
                                         </tr>";
                                     }
                                 } else {
-                                    echo "<tr class='no-records'><td colspan='6' class='text-center text-muted'>No records found.</td></tr>";
-                                }   
+                                    echo "<tr>
+                                            <td colspan='6' class='no-records'>
+                                            <i class='bi bi-inbox'></i>
+                                            <div>No records found</div>
+                                            </td>
+                                        </tr>;";
+                                    }   
                                 ?>
                             </tbody>
                         </table>
@@ -168,16 +195,17 @@ $activities = $activitiesQuery->get_result();
                 <div class="card-body" style="min-height: 500px;">
 
                     <form method="POST" action="Controllers/ActivityController.php" id="activityForm">
+                        <input type="hidden" name="delete_ids" id="delete_ids">
                         <div class="mb-2">
                             <label class="form-label">Control No.</label>
-                            <input type="text" name="control_no" id="control_no" class="form-control" placeholder="Enter the Control No.">
+                            <input type="text" name="control_no" id="control_no" class="form-control" readonly 
+                                style="background:#e9ecef; cursor:not-allowed;" required
+                                value="<?php echo $nextConID; ?>">
                         </div>
-                        <div class="mb-2">
+                        <div class="mb-2 position-relative">
                             <label class="form-label">Department</label>
-                            <select name="department" id="department" class="form-select">
-                                <option value="CITY MAYOR OFFICE">CITY MAYOR OFFICE</option>
-                                <option value="Other Department">Other Department</option>
-                            </select>
+                            <input type="text" name="department" id="department" class="form-control" placeholder="Enter or select a department" autocomplete="off">
+                            <div id="departmentSuggestions" class="suggestions-dropdown"></div>
                         </div>
                         <div class="mb-2">
                             <label class="form-label">Activity Title</label>
@@ -196,15 +224,15 @@ $activities = $activitiesQuery->get_result();
                         </div>
 
                         <div class="form-buttons">
-                            <button type="reset" class="btn btn-custom">
+                            <button type="reset" class="btn btn-custom" <?= !$canAccessActivity ? 'disabled style="background:darkblue;color:#ffffff;opacity:0.8;cursor:not-allowed;"' : '' ?>>
                                 <i class="bi bi-plus-circle"></i> New
                             </button>
-                            <button type="submit" name="save" class="btn btn-custom">
+                            <button type="submit" name="save" class="btn btn-custom" <?= !$canAccessActivity ? 'disabled style="background:darkblue;color:#ffffff;opacity:0.8;cursor:not-allowed;"' : '' ?>>
                                 <i class="bi bi-save"></i> Save
                             </button>
-                            <button type="button" id="deleteBtn" class="btn btn-danger">
+                            <!-- <button type="button" id="deleteBtn" class="btn btn-danger" <?= !$canAccessActivity ? 'disabled style="background:red;color:#ffffff;opacity:0.8;cursor:not-allowed;"' : '' ?>>
                                 <i class="bi bi-trash"></i> Delete
-                            </button>
+                            </button> -->
 
                             <button onclick="window.location.href='../index.php'" type="button" class="btn btn-secondary">
                                 <i class="bi bi-x-circle"></i> Close
@@ -279,36 +307,34 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-    // ✅ Success popup after save
-    <?php if (isset($_SESSION['save_success']) && $_SESSION['save_success'] === true): ?>
-        Swal.fire({
-            icon: 'success',
-            title: 'Saved Successfully!',
-            text: 'The new activity has been added.',
-            confirmButtonColor: '#1e3a8a'
-        });
-        <?php unset($_SESSION['save_success']); ?>
-    <?php endif; ?>
+    document.querySelector('.btn-custom[type="reset"]').addEventListener('click', function() {
+        // Reset form
+        document.getElementById('id').value = '';
+        document.getElementById('date_received').value = '';
+        document.getElementById('sender').value = '';
+        document.getElementById('description').value = '';
+        document.getElementById('indorse_to').value = '';
+        document.getElementById('date_routed').value = '';
+        document.getElementById('action_taken').value = '';
+        document.getElementById('remarks').value = '';
 
-    // ✅ Show "Enter a new activity" message when New is clicked
-    const newBtn = document.querySelector('.btn-custom[type="reset"]');
-    newBtn.addEventListener('click', function() {
-        const existing = document.getElementById('newActivityMsg');
-        if (existing) existing.remove();
+        // Set ComID to next value
+        const comIdInput = document.getElementById('com_id');
+        const lastComId = <?php echo $nextComID - 1; ?>; // last used ComID
+        comIdInput.value = lastComId + 1;
 
-        const msg = document.createElement('div');
-        msg.id = 'newActivityMsg';
-        msg.textContent = 'Enter a new activity';
-        msg.style.fontWeight = '600';
-        msg.style.color = 'darkblue';
-        msg.style.marginBottom = '8px';
-        msg.style.textAlign = 'center';
-
-        const controlLabel = document.querySelector('label[for="control_no"]') || document.querySelector('label.form-label');
-        controlLabel.parentNode.insertBefore(msg, controlLabel);
+        // Optional: Show message
+        if (!document.getElementById('newFormMsg')) {
+            const label = document.createElement('div');
+            label.id = 'newFormMsg';
+            label.textContent = 'Enter a new form.';
+            label.style.color = 'darkblue';
+            label.style.fontWeight = '600';
+            label.style.textAlign = 'center';
+            label.style.marginBottom = '8px';
+            comIdInput.parentNode.insertBefore(label, comIdInput);
+        }
     });
-});
 </script>
 
 <script>
@@ -400,20 +426,36 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        // Get Control No. from the table (2nd column)
+        // Get IDs and Control No.
+        const ids = Array.from(checked).map(cb => cb.dataset.id);
         const controlNos = Array.from(checked).map(cb => cb.closest('tr').children[1].textContent.trim());
 
         Swal.fire({
             title: 'Confirm Delete',
             html: `<p>Are you sure you want to delete the following Control No(s)?</p>
-                <strong>${controlNos.join(', ')}</strong>`,
+            <strong>${controlNos.join(', ')}</strong>`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
             confirmButtonText: 'Delete!'
         }).then(result => {
             if (result.isConfirmed) {
-                const form = deleteBtn.closest('form');
+
+
+                // Clear old hidden inputs
+                const form = document.getElementById("activityForm");
+                form.querySelectorAll('input[name="delete_ids[]"]').forEach(el => el.remove());
+
+                // Add a hidden input for each selected ID
+                ids.forEach(id => {
+                    const input = document.createElement("input");
+                    input.type = "hidden";
+                    input.name = "delete_ids[]";
+                    input.value = id;
+                    form.appendChild(input);
+                });
+
+                // Submit the form
                 form.submit();
             }
         });
@@ -431,6 +473,109 @@ document.addEventListener("DOMContentLoaded", function () {
         });
         <?php unset($_SESSION['save_success']); ?>
     <?php endif; ?>
+
+        // Show success message after deletion
+    <?php if (isset($_SESSION['delete_success']) && $_SESSION['delete_success'] === true): ?>
+        Swal.fire({
+            icon: 'success',
+            title: 'Deleted Successfully!',
+            html: 'The selected Control No(s) have been deleted.',
+            confirmButtonColor: '#1e3a8a'
+        });
+        <?php unset($_SESSION['delete_success']); ?>
+    <?php endif; ?>
+
+    <?php if (isset($_SESSION['delete_error']) && $_SESSION['delete_error'] === true): ?>
+        Swal.fire({
+            icon: 'error',
+            title: 'Delete Failed!',
+            text: 'Something went wrong while deleting records.',
+            confirmButtonColor: '#d33'
+        });
+        <?php unset($_SESSION['delete_error']); ?>
+    <?php endif; ?>
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const departmentInput = document.getElementById("department");
+        const suggestionsContainer = document.getElementById("departmentSuggestions");
+
+        // Fetch all departments from PHP
+        const departments = [
+            <?php
+            $deptQuery = $conn->query("SELECT DISTINCT department FROM activity_designs ORDER BY department ASC");
+            $deptArr = [];
+            while ($dept = $deptQuery->fetch_assoc()) {
+                $deptArr[] = '"' . addslashes($dept['department']) . '"';
+            }
+            echo implode(',', $deptArr);
+            ?>
+        ];
+
+        function showSuggestions(filtered) {
+            suggestionsContainer.innerHTML = '';
+            if (filtered.length === 0) {
+                suggestionsContainer.style.display = 'none';
+                return;
+            }
+            filtered.forEach(dept => {
+                const div = document.createElement('div');
+                div.textContent = dept;
+                div.addEventListener('click', () => {
+                    departmentInput.value = dept;
+                    suggestionsContainer.style.display = 'none';
+                });
+                suggestionsContainer.appendChild(div);
+            });
+            suggestionsContainer.style.display = 'block';
+        }
+
+        function filterAndShow() {
+            const value = departmentInput.value.toLowerCase();
+            const filtered = departments.filter(d => d.toLowerCase().includes(value));
+            showSuggestions(filtered);
+        }
+
+        // Show suggestions when typing
+        departmentInput.addEventListener('input', filterAndShow);
+
+        // ✅ Show suggestions immediately on focus
+        departmentInput.addEventListener('focus', filterAndShow);
+
+        // Hide suggestions on outside click
+        document.addEventListener('click', (e) => {
+            if (!departmentInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+                suggestionsContainer.style.display = 'none';
+            }
+        });
+    });
+</script>
+
+<script>
+    // Table search functionality
+    const searchInput = document.getElementById("tableSearch");
+    const searchBtn = document.getElementById("searchBtn");
+    const table = document.getElementById("recordsTable");
+    const tableRows = table.querySelectorAll("tbody tr");
+
+    function filterTable() {
+        const query = searchInput.value.toLowerCase();
+        tableRows.forEach(row => {
+            const rowText = row.textContent.toLowerCase();
+            row.style.display = rowText.includes(query) ? "" : "none";
+        });
+    }
+
+    // Trigger search on button click
+    searchBtn.addEventListener("click", filterTable);
+
+    // Trigger search on Enter key
+    searchInput.addEventListener("keyup", (e) => {
+        if (e.key === "Enter") {
+            filterTable();
+        }
+    });
 </script>
 </body>
 </html>

@@ -167,3 +167,79 @@ flex-direction: column;
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+.profile-menu {
+    position: absolute;
+    top: 55px;
+    right: 0;
+    width: 180px;
+    background: #fff;
+    border-radius: 7px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    display: none;
+    z-index: 1000;
+    overflow: hidden;
+    animation: fadeIn 0.2s ease-out;
+    font-family: "Segoe UI", sans-serif;
+}
+
+.profile-menu-arrow {
+    position: absolute;
+    top: -8px;
+    right: 14px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid #fff;
+}
+
+.profile-menu ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.profile-menu ul li {
+    border-bottom: 1px solid #eee;
+}
+
+.profile-menu ul li:last-child {
+    border-bottom: none;
+}
+
+.profile-menu ul li a {
+display: flex;
+align-items: center;
+color: #1e3a8a;
+font-weight: 500;
+text-decoration: none;
+transition: all 0.2s ease;
+}   
+
+.profile-menu ul li a i {
+    margin-right: 10px;
+    font-size: 1rem;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s;
+}
+
+.profile-menu ul li a:hover i {
+    background: darkblue;
+    color: #fff;
+}
+
+.profile-menu ul li a:hover {
+    color: darkblue;
+    background-color: #d6d6d6ff;
+}
+
+/* Small fade-in animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}

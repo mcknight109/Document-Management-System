@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_id'])) {
 
 // Fetch user's full name from the database
 $user_id = $_SESSION['user_id'];
-$query = $conn->prepare("SELECT first_name, middle_initial, last_name, username FROM users WHERE id = ?");
+$query = $conn->prepare("SELECT first_name, middle_initial, last_name, username, permissions FROM users WHERE id = ?");
 $query->bind_param("i", $user_id);
 $query->execute();
 $result = $query->get_result();
@@ -36,115 +36,59 @@ if ($result->num_rows > 0) {
 date_default_timezone_set('Asia/Manila');
 $currentDate = date("M d, Y");
 
+// Decode permissions JSON into array
+$user_permissions = [];
+if (!empty($user['permissions'])) {
+    $user_permissions = json_decode($user['permissions'], true);
+}
+
+// Check if user has voucher_records permission
+$canAccessCertificate = in_array("certificate_records", $user_permissions);
+
 // Pagination setup
 $limit = 10; // records per page
 $page = isset($_GET['page']) && is_numeric($_GET['page']) ? intval($_GET['page']) : 1;
 $offset = ($page - 1) * $limit;
 
 // Count total certificate records
-$countQuery = $conn->prepare("SELECT COUNT(*) AS total FROM certificate_records WHERE user_id = ?");
-$countQuery->bind_param("i", $user_id);
+$countQuery = $conn->prepare("SELECT COUNT(*) AS total FROM certificate_records");
+
 $countQuery->execute();
 $totalResult = $countQuery->get_result()->fetch_assoc();
 $totalRecords = $totalResult['total'];
 $totalPages = ceil($totalRecords / $limit);
 
 // Fetch paginated certificate records
-$recordsQuery = $conn->prepare("SELECT * FROM certificate_records WHERE user_id = ? ORDER BY id DESC");
-$recordsQuery->bind_param("i", $user_id);
+$recordsQuery = $conn->prepare("SELECT * FROM certificate_records ORDER BY id DESC");
 $recordsQuery->execute();
 $records = $recordsQuery->get_result();
-?>
 
+// Get the next ConID
+$nextConID = 1; // default if table is empty
+$conQuery = $conn->prepare("SELECT control_no FROM certificate_records ORDER BY id DESC LIMIT 1");
+$conQuery->execute();
+$conResult = $conQuery->get_result();
+
+if ($conResult->num_rows > 0) {
+    $lastCon = $conResult->fetch_assoc();
+    $nextConID = intval($lastCon['control_no']) + 1;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Certificate Records</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="../assets/css/users/certificate.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate Records</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/users/certificate.css">
 <style>
-    .profile-menu {
-        position: absolute;
-        top: 55px;
-        right: 0;
-        width: 180px;
-        background: #fff;
-        border-radius: 8px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-        display: none;
-        z-index: 1000;
-        overflow: hidden;
-        animation: fadeIn 0.2s ease-out;
-        font-family: "Segoe UI", sans-serif;
-    }
 
-    .profile-menu-arrow {
-        position: absolute;
-        top: -8px;
-        right: 14px;
-        width: 0;
-        height: 0;
-        border-left: 8px solid transparent;
-        border-right: 8px solid transparent;
-        border-bottom: 8px solid #fff;
-    }
-
-    .profile-menu ul {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-    }
-
-    .profile-menu ul li {
-        border-bottom: 1px solid #eee;
-    }
-
-    .profile-menu ul li:last-child {
-        border-bottom: none;
-    }
-
-    .profile-menu ul li a {
-    display: flex;
-    align-items: center;
-    color: #1e3a8a;
-    font-weight: 500;
-    text-decoration: none;
-    transition: all 0.2s ease;
-    }   
-
-    .profile-menu ul li a i {
-        margin-right: 10px;
-        font-size: 1rem;
-        width: 45px;
-        height: 45px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background 0.2s, color 0.2s;
-    }
-
-    .profile-menu ul li a:hover i {
-        background: darkblue;
-        color: #fff;
-    }
-
-    .profile-menu ul li a:hover {
-        color: darkblue;
-        background-color: #d6d6d6ff;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-5px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
 </style>
 </head>
 <body>
-
 <!-- HEADER -->
 <div class="header">
     <img src="../assets/images/office-of-treasurer.png" alt="Logo" class="logo">
@@ -176,10 +120,18 @@ $records = $recordsQuery->get_result();
     <!-- LEFT SIDE: Table -->
     <div class="col-md-8 d-flex">
         <div class="card flex-fill">
-            <div class="card-header">
+            <div class="card-header ok-card">
+                <div class="left">
                     <i class="bi bi-table"></i>
                     Certificate Records
                 </div>
+                <div class="right">
+                    <div class="search-container">
+                        <input type="text" id="tableSearch" placeholder="Search records..." />
+                        <button id="searchBtn"><i class="bi bi-search"></i></button>
+                    </div>
+                </div>
+            </div>
             <div class="card-body d-flex flex-column" style="min-height: 500px;">
                 <!-- Pagination Controls -->
                 <div class="pagination-controls">
@@ -213,7 +165,7 @@ $records = $recordsQuery->get_result();
                             <?php while ($row = $records->fetch_assoc()): ?>
                             <tr data-id="<?php echo $row['id']; ?>">
                                 <td><input type="checkbox" class="rowCheckbox"></td>
-                                <td><?php echo htmlspecialchars($row['control_number']); ?></td>
+                                <td><?php echo htmlspecialchars($row['control_no']); ?></td>
                                 <td><?php echo htmlspecialchars($row['project']); ?></td>
                                 <td><?php echo htmlspecialchars($row['office']); ?></td>
                                 <td><?php echo htmlspecialchars(date("M d, Y", strtotime($row['date_out']))); ?></td>
@@ -244,17 +196,21 @@ $records = $recordsQuery->get_result();
                 </div>
             <div class="card-body" style="min-height: 500px;">
                 <form method="POST" id="certificateForm" action="Controllers/CertificateController.php">
+                    <input type="hidden" name="delete_ids[]" id="delete_ids">
                     <div class="mb-2">
                         <label class="form-label">Control No.</label>
-                        <input type="text" name="control_number" id="control_number" class="form-control" placeholder="Enter the control no."  >
+                        <input type="text" name="control_no" id="control_no" class="form-control" readonly 
+                            style="background:#e9ecef; cursor:not-allowed;" required
+                            value="<?php echo $nextConID; ?>">
                     </div>
                     <div class="mb-2">
                         <label class="form-label">Project</label>
                         <input type="text" name="project" id="project" class="form-control" placeholder="Enter the project name" >
                     </div>
-                    <div class="mb-2">
+                    <div class="mb-2 position-relative">
                         <label class="form-label">Office</label>
-                        <input type="text" name="office" id="office" class="form-control" placeholder="Enter the Office" >
+                        <input type="text" name="office" id="office" class="form-control" placeholder="Enter or select a office" autocomplete="off">
+                        <div id="officeSuggestions" class="suggestions-dropdown"></div>
                     </div>
                     <div class="mb-2">
                         <label class="form-label">Date Out</label>
@@ -266,13 +222,13 @@ $records = $recordsQuery->get_result();
                     </div>
 
                     <div class="form-buttons">
-                        <button type="reset" class="btn btn-custom">
+                        <button type="reset" class="btn btn-custom" <?= !$canAccessCertificate ? 'disabled style="background:darkblue;color:#ffffff;opacity:0.8;cursor:not-allowed;"' : '' ?>>
                             <i class="bi bi-plus-circle"></i> New
                         </button>
-                        <button type="submit" name="save" class="btn btn-custom">
+                        <button type="submit" name="save" class="btn btn-custom" <?= !$canAccessCertificate ? 'disabled style="background:darkblue;color:#ffffff;opacity:0.8;cursor:not-allowed;"' : '' ?>>
                             <i class="bi bi-save"></i> Save
                         </button>
-                        <button type="button" id="deleteBtn" class="btn btn-danger">
+                        <button type="button" id="deleteBtn" class="btn btn-danger" <?= !$canAccessCertificate ? 'disabled style="background:red;color:#ffffff;opacity:0.8;cursor:not-allowed;"' : '' ?>>
                             <i class="bi bi-trash"></i> Delete
                         </button>
                         <button onclick="window.location.href='../index.php'" type="button" class="btn btn-secondary">
@@ -417,45 +373,56 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 <script>
-    // Delete button confirmation showing Control No.
     const deleteBtn = document.getElementById('deleteBtn');
+
     deleteBtn.addEventListener('click', function (e) {
         e.preventDefault();
 
         const checked = document.querySelectorAll('.rowCheckbox:checked');
+
         if (checked.length === 0) {
             Swal.fire('No Selection', 'Please select at least one record to delete.', 'warning');
             return;
         }
 
-        // Get Control No. from the table (2nd column)
-        const controlNos = Array.from(checked).map(cb => cb.closest('tr').children[1].textContent.trim());
+        // 🔹 Collect Control Numbers for confirmation popup
+        const controlNos = Array.from(checked).map(cb =>
+            cb.closest('tr').children[1].textContent.trim()
+        );
+
+        // 🔹 Collect IDs (needed for controller)
+        const ids = Array.from(checked).map(cb =>
+            cb.closest('tr').dataset.id
+        );
 
         Swal.fire({
             title: 'Confirm Delete',
             html: `<p>Are you sure you want to delete the following Control No(s)?</p>
-                <strong>${controlNos.join(', ')}</strong>`,
+                   <strong>${controlNos.join(', ')}</strong>`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
-            confirmButtonText: 'Delete!'
+            confirmButtonText: 'Delete'
         }).then(result => {
             if (result.isConfirmed) {
-                const form = deleteBtn.closest('form');
+
+                // Clear old hidden inputs
+                const form = document.getElementById("certificateForm");
+                form.querySelectorAll('input[name="delete_ids[]"]').forEach(el => el.remove());
+
+                // Add a hidden input for each selected ID
+                ids.forEach(id => {
+                    const input = document.createElement("input");
+                    input.type = "hidden";
+                    input.name = "delete_ids[]";
+                    input.value = id;
+                    form.appendChild(input);
+                });
+
+                // Submit the form
                 form.submit();
             }
         });
-
-        // Success popup after delete
-        <?php if (isset($_SESSION['delete_success']) && $_SESSION['delete_success'] === true): ?>
-            Swal.fire({
-                icon: 'success',
-                title: 'Deleted!',
-                text: 'Selected certificate record(s) have been deleted.',
-                confirmButtonColor: '#1e3a8a'
-            });
-            <?php unset($_SESSION['delete_success']); ?>
-        <?php endif; ?>
     });
 </script>
 
@@ -470,6 +437,117 @@ document.addEventListener("DOMContentLoaded", function () {
         });
         <?php unset($_SESSION['save_success']); ?>
     <?php endif; ?>
+
+    // Show success message after DELETE
+    <?php if (isset($_SESSION['delete_success']) && $_SESSION['delete_success'] === true): ?>
+        Swal.fire({
+            icon: 'success',
+            title: 'Deleted Successfully!',
+            text: 'Selected record(s) have been removed.',
+            confirmButtonColor: '#d33'
+        });
+        <?php unset($_SESSION['delete_success']); ?>
+    <?php endif; ?>
+
+    // ❌ If delete failed
+    <?php if (isset($_SESSION['delete_error']) && $_SESSION['delete_error'] === true): ?>
+        Swal.fire({
+            icon: 'error',
+            title: 'Delete Failed!',
+            text: 'Something went wrong while deleting.',
+            confirmButtonColor: '#1e3a8a'
+        });
+        <?php unset($_SESSION['delete_error']); ?>
+    <?php endif; ?>
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const payeeInput = document.getElementById("payee");
+    const suggestionsContainer = document.getElementById("payeeSuggestions");
+
+    // Fetch all payee from PHP
+    const payees = [
+        <?php
+        $payeeQuery = $conn->query("SELECT DISTINCT payee FROM voucher_records ORDER BY payee ASC");
+        $payeeArr = [];
+        while ($row = $payeeQuery->fetch_assoc()) {
+            $payee = trim($row['payee']);
+            if (!empty($payee)) {
+                $payeeArr[] = '"' . addslashes($payee) . '"';
+            }
+        }
+        echo implode(',', $payeeArr);
+        ?>
+    ];
+
+    // Function: Build dropdown items
+    function showSuggestions(filtered) {
+        suggestionsContainer.innerHTML = "";
+
+        if (filtered.length === 0) {
+            suggestionsContainer.style.display = "none";
+            return;
+        }
+
+        filtered.forEach(name => {
+            const div = document.createElement("div");
+            div.textContent = name;
+            div.addEventListener("click", () => {
+                payeeInput.value = name;
+                suggestionsContainer.style.display = "none";
+            });
+            suggestionsContainer.appendChild(div);
+        });
+
+        suggestionsContainer.style.display = "block";
+    }
+
+    // Event: Typing
+    payeeInput.addEventListener("input", () => {
+        const val = payeeInput.value.toLowerCase();
+        const filtered = payees.filter(name => name.toLowerCase().includes(val));
+        showSuggestions(filtered);
+    });
+
+    // Event: When input is clicked
+    payeeInput.addEventListener("focus", () => {
+        showSuggestions(payees);
+    });
+
+    // Close if clicked outside
+    document.addEventListener("click", e => {
+        if (!suggestionsContainer.contains(e.target) && e.target !== payeeInput) {
+            suggestionsContainer.style.display = "none";
+        }
+    });
+});
+</script>
+
+<script>
+    // Table search functionality
+    const searchInput = document.getElementById("tableSearch");
+    const searchBtn = document.getElementById("searchBtn");
+    const table = document.getElementById("recordsTable");
+    const tableRows = table.querySelectorAll("tbody tr");
+
+    function filterTable() {
+        const query = searchInput.value.toLowerCase();
+        tableRows.forEach(row => {
+            const rowText = row.textContent.toLowerCase();
+            row.style.display = rowText.includes(query) ? "" : "none";
+        });
+    }
+
+    // Trigger search on button click
+    searchBtn.addEventListener("click", filterTable);
+
+    // Trigger search on Enter key
+    searchInput.addEventListener("keyup", (e) => {
+        if (e.key === "Enter") {
+            filterTable();
+        }
+    });
 </script>
 </body>
 </html>

@@ -82,83 +82,7 @@ if (isset($_SESSION['user_id'])) {
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="index.css">
-<style>
-    .profile-menu {
-        position: absolute;
-        top: 55px;
-        right: 0;
-        width: 180px;
-        background: #fff;
-        border-radius: 7px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-        display: none;
-        z-index: 1000;
-        overflow: hidden;
-        animation: fadeIn 0.2s ease-out;
-        font-family: "Segoe UI", sans-serif;
-    }
 
-    .profile-menu-arrow {
-        position: absolute;
-        top: -8px;
-        right: 14px;
-        width: 0;
-        height: 0;
-        border-left: 8px solid transparent;
-        border-right: 8px solid transparent;
-        border-bottom: 8px solid #fff;
-    }
-
-    .profile-menu ul {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-    }
-
-    .profile-menu ul li {
-        border-bottom: 1px solid #eee;
-    }
-
-    .profile-menu ul li:last-child {
-        border-bottom: none;
-    }
-
-    .profile-menu ul li a {
-    display: flex;
-    align-items: center;
-    color: #1e3a8a;
-    font-weight: 500;
-    text-decoration: none;
-    transition: all 0.2s ease;
-    }   
-
-    .profile-menu ul li a i {
-        margin-right: 10px;
-        font-size: 1rem;
-        width: 45px;
-        height: 45px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background 0.2s, color 0.2s;
-    }
-
-    .profile-menu ul li a:hover i {
-        background: darkblue;
-        color: #fff;
-    }
-
-    .profile-menu ul li a:hover {
-        color: darkblue;
-        background-color: #d6d6d6ff;
-    }
-
-    /* Small fade-in animation */
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-5px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-</style>
 </head>
 <body>
 <!-- HEADER -->
@@ -250,7 +174,7 @@ if (isset($_SESSION['user_id'])) {
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content p-3">
             <div class="modal-header border-0">
-                <h5 class="modal-title" id="payeeModalLabel"><i class="fas fa-user"></i> Search or Add Payee</h5>
+                <h5 class="modal-title" id="payeeModalLabel"><i class="fas fa-user"></i> Search Payee</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -262,9 +186,7 @@ if (isset($_SESSION['user_id'])) {
                     <table class="table table-hover">
                         <thead>
                         <tr>
-                            <th>First Name</th>
-                            <th>Middle</th>
-                            <th>Last Name</th>
+                            <th>Full Name</th>
                             <th>Added By</th>
                         </tr>
                         </thead>
@@ -273,21 +195,6 @@ if (isset($_SESSION['user_id'])) {
                         </tbody>
                     </table>
                 </div>
-
-                <hr>
-                <h6>Add New Payee</h6>
-                <form id="addPayeeForm">
-                <div class="mb-2">
-                    <input type="text" class="form-control" name="first_name" placeholder="First Name" required>
-                </div>
-                <div class="mb-2">
-                    <input type="text" class="form-control" name="middle_initial" placeholder="Middle Initial">
-                </div>
-                <div class="mb-2">
-                    <input type="text" class="form-control" name="last_name" placeholder="Last Name" required>
-                </div>
-                    <button type="submit" class="btn btn-primary w-100">Add Payee</button>
-                </form>
             </div>
         </div>
     </div>
@@ -330,61 +237,44 @@ if (isset($_SESSION['user_id'])) {
 </script>
 
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    const payeeSearch = document.getElementById("payeeSearch");
-    const payeeResults = document.getElementById("payeeResults");
+    document.addEventListener("DOMContentLoaded", function() {
+        const payeeSearch = document.getElementById("payeeSearch");
+        const payeeResults = document.getElementById("payeeResults");
+        let debounceTimeout = null;
 
-    // Search payees as user types
-    payeeSearch.addEventListener("input", function() {
+        payeeSearch.addEventListener("input", function() {
         const query = this.value.trim();
+
+        if (debounceTimeout) clearTimeout(debounceTimeout);
+
         if (query.length === 0) {
             payeeResults.innerHTML = "";
             return;
         }
 
-        fetch(`users/Controllers/PayeeController.php?action=search&query=${encodeURIComponent(query)}`)
-            .then(res => res.json())
-            .then(data => {
-                payeeResults.innerHTML = "";
-                if (data.length > 0) {
-                    data.forEach(payee => {
-                        const row = document.createElement("tr");
-                        row.innerHTML = `
-                            <td>${payee.first_name}</td>
-                            <td>${payee.middle_initial || ''}</td>
-                            <td>${payee.last_name}</td>
-                            <td>${payee.added_by_name}</td>
-                        `;
-                        payeeResults.appendChild(row);
-                    });
-                } else {
-                    payeeResults.innerHTML = `<tr><td colspan="4" class="text-center text-muted">No results found</td></tr>`;
-                }
-            });
-    });
-
-    // Add new payee
-    const addPayeeForm = document.getElementById("addPayeeForm");
-    addPayeeForm.addEventListener("submit", function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-
-        fetch("users/Controllers/PayeeController.php?action=add", {
-            method: "POST",
-            body: formData
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                Swal.fire("Added!", "Payee added successfully.", "success");
-                this.reset();
-                payeeSearch.dispatchEvent(new Event("input")); // Refresh results
-            } else {
-                Swal.fire("Error", data.message, "error");
-            }
-        });
+        debounceTimeout = setTimeout(() => {
+            fetch(`users/Controllers/PayeeController.php?action=search&query=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(data => {
+                    payeeResults.innerHTML = "";
+                    if (data.length > 0) {
+                        data.forEach(payee => {
+                            const row = document.createElement("tr");
+                            row.innerHTML = `
+                                <td>${payee.payee}</td>
+                                <td>${payee.added_by_name}</td>
+                            `;
+                            payeeResults.appendChild(row);
+                        });
+                    } else {
+                        payeeResults.innerHTML = `<tr><td colspan="2" class="text-center text-muted">No results found</td></tr>`;
+                    }
+                })
+                .catch(err => console.error("Search error:", err));
+        }, 300);
     });
 });
 </script>
+
 </body>
 </html>

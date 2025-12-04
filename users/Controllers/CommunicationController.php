@@ -32,13 +32,14 @@ if (isset($_POST['save_edit']) && !empty($_POST['id'])) {
     $id = $_POST['id'];
     $indorse_to = $_POST['indorse_to'];
     $date_routed = $_POST['date_routed'];
-    $action_taken = $_POST['action_taken'];
+    $routed_by = $_POST['routed_by']; // added
+    $action_taken = $_POST['action'];
     $remarks = $_POST['remarks'];
 
     $stmt = $conn->prepare("UPDATE communications 
-        SET indorse_to = ?, date_routed = ?, action_taken = ?, remarks = ? 
+        SET indorse_to = ?, date_routed = ?, routed_by = ?, action_taken = ?, remarks = ? 
         WHERE id = ?");
-    $stmt->bind_param("ssssi", $indorse_to, $date_routed, $action_taken, $remarks, $id);
+    $stmt->bind_param("sssssi", $indorse_to, $date_routed, $routed_by, $action_taken, $remarks, $id);
 
     if ($stmt->execute()) {
         $_SESSION['edit_success'] = true;

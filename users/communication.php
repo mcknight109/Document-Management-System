@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
-$query = $conn->prepare("SELECT first_name, middle_initial, last_name, username FROM users WHERE id = ?");
+$query = $conn->prepare("SELECT first_name, middle_initial, last_name, username, permissions FROM users WHERE id = ?");
 $query->bind_param("i", $user_id);
 $query->execute();
 $result = $query->get_result();
@@ -32,6 +32,15 @@ if ($result->num_rows > 0) {
 date_default_timezone_set('Asia/Manila');
 $currentDate = date("M d, Y");
 
+// Decode permissions JSON into array
+$user_permissions = [];
+if (!empty($user['permissions'])) {
+    $user_permissions = json_decode($user['permissions'], true);
+}
+
+// Check if user has voucher_records permission
+$canAccessCommunication = in_array("communications_records", $user_permissions);
+
 // Pagination setup
 $limit = 10; // records per page
 $page = isset($_GET['page']) && is_numeric($_GET['page']) ? intval($_GET['page']) : 1;
@@ -50,6 +59,17 @@ $recordsQuery = $conn->prepare("SELECT * FROM communications WHERE user_id = ? O
 $recordsQuery->bind_param("iii", $user_id, $limit, $offset);
 $recordsQuery->execute();
 $records = $recordsQuery->get_result();
+
+// Get the next ComID
+$nextComID = 1; // default if table is empty
+$comQuery = $conn->prepare("SELECT com_id FROM communications WHERE user_id = ? ORDER BY id DESC LIMIT 1");
+$comQuery->bind_param("i", $user_id);
+$comQuery->execute();
+$comResult = $comQuery->get_result();
+if ($comResult->num_rows > 0) {
+    $lastCom = $comResult->fetch_assoc();
+    $nextComID = intval($lastCom['com_id']) + 1;
+}
 ?>
 
 <!DOCTYPE html>
@@ -62,6 +82,9 @@ $records = $recordsQuery->get_result();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/users/communication.css">
+<style>
+
+</style>
 </head>
 <body>
 
@@ -98,9 +121,17 @@ $records = $recordsQuery->get_result();
         <!-- LEFT SIDE: Table -->
         <div class="col-lg-8 left-panel">
             <div class="card h-100">
-                <div class="card-header">
-                    <i class="bi bi-table"></i>
-                    Communication Records
+                <div class="card-header ok-card">
+                    <div class="left">
+                        <i class="bi bi-table"></i>
+                        Communication Records
+                    </div>
+                    <div class="right">
+                        <div class="search-container">
+                            <input type="text" id="tableSearch" placeholder="Search records..." />
+                            <button id="searchBtn"><i class="bi bi-search"></i></button>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body d-flex flex-column">
                     <!-- Pagination Controls -->
@@ -135,7 +166,7 @@ $records = $recordsQuery->get_result();
                             <tbody>
                                 <?php
                                 include '../db.php';
-                                $records = $conn->query("SELECT * FROM communications WHERE user_id = $user_id ORDER BY id DESC");
+                                $records = $conn->query("SELECT * FROM communications");
 
                                 if ($records->num_rows > 0) {
                                     while ($row = $records->fetch_assoc()) {
@@ -143,7 +174,7 @@ $records = $recordsQuery->get_result();
                                         echo "<tr class='text-center' data-row='{$data}'>
                                                 <td><input type='checkbox' class='rowCheckbox' name='delete_ids[]' value='{$row['id']}'></td>
                                                 <td>{$row['com_id']}</td>
-                                                <td>{$row['date_received']}</td>
+                                                <td>" . date("M d, Y", strtotime($row['date_received'])) . "</td>
                                                 <td>{$row['sender']}</td>
                                                 <td>{$row['description']}</td>
                                                 <td>{$row['indorse_to']}</td>
@@ -180,7 +211,8 @@ $records = $recordsQuery->get_result();
                     <div class="card-body">
                         <div class="mb-3">
                             <label class="form-label">ComID</label>
-                            <input type="text" name="com_id" id="com_id" class="form-control" value="COM-" required>
+                            <input type="text" name="com_id" id="com_id" class="form-control" readonly 
+                                style="background:#e9ecef; cursor:not-allowed;" value="<?php echo $nextComID; ?>" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Date Received</label>
@@ -195,18 +227,15 @@ $records = $recordsQuery->get_result();
                             <textarea name="description" id="description" class="form-control" rows="3" placeholder="Enter description" required></textarea>
                         </div>
                         <div class="form-buttons" style="flex-wrap: nowrap;">
-                            <button type="reset" class="btn btn-custom">
+                            <button type="reset" class="btn btn-custom" <?= !$canAccessCommunication ? 'disabled style="background:darkblue;color:#ffffff;opacity:0.8;cursor:not-allowed;"' : '' ?>> 
                                 <i class="bi bi-plus-circle"></i> New
                             </button>
-                            <button type="submit" name="save" class="btn btn-custom">
+                            <button type="submit" name="save" class="btn btn-custom" <?= !$canAccessCommunication ? 'disabled style="background:darkblue;color:#ffffff;opacity:0.8;cursor:not-allowed;"' : '' ?>>
                                 <i class="bi bi-save"></i> Save
                             </button>
-                            <button type="button" onclick="printSlip()" class="btn btn-custom">
+                            <button type="button" onclick="printSlip()" class="btn btn-custom" <?= !$canAccessCommunication ? 'disabled style="background:darkblue;color:#ffffff;opacity:0.8;cursor:not-allowed;"' : '' ?>>
                                 <i class="bi bi-printer"></i> Print
                             </button>
-                            <!-- <button onclick="window.location.href='../index.php'" type="button" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Close
-                            </button> -->
                         </div>
                     </div>
                 </div>
@@ -219,7 +248,7 @@ $records = $recordsQuery->get_result();
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
-                            <label href="" style="font-weight: bold; color: darkblue;">ComID:</label> <!-- echo the comid of the selected data in table-->
+                            <label href="" style="font-weight: bold; color: darkblue;">ComID:</label>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Indorse To</label>
@@ -229,21 +258,27 @@ $records = $recordsQuery->get_result();
                             <label class="form-label">Date Routed</label>
                             <input type="date" name="date_routed" id="date_routed" class="form-control">
                         </div>
-                        <div class="mb-3">
+                        <div class="mb-2 position-relative">
+                            <label class="form-label">Routed by</label>
+                            <input type="text" name="routed_by" id="routed_by" class="form-control" placeholder="Enter or select routed by" autocomplete="off">
+                            <div id="routedBySuggestions" class="suggestions-dropdown"></div>
+                        </div>
+                        <div class="mb-2 position-relative">
                             <label class="form-label">Action</label>
-                            <input type="text" name="action_taken" id="action_taken" class="form-control" placeholder="Enter action taken">
+                            <input type="text" name="action" id="action" class="form-control" placeholder="Enter or select actions" autocomplete="off">
+                            <div id="actionSuggestions" class="suggestions-dropdown"></div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Remarks</label>
                             <textarea name="remarks" id="remarks" class="form-control" rows="3" placeholder="Enter remarks"></textarea>
                         </div>
                         <div class="form-buttons">
-                            <button type="submit" name="save_edit" class="btn btn-custom">
+                            <button type="submit" name="save_edit" class="btn btn-custom" <?= !$canAccessCommunication ? 'disabled style="background:darkblue;color:#ffffff;opacity:0.8;cursor:not-allowed;"' : '' ?>>
                                 <i class="bi bi-pencil-square"></i> Save Edit
                             </button>
-                            <button type="button" id="deleteBtn" class="btn btn-danger">
+                            <!-- <button type="button" id="deleteBtn" class="btn btn-danger" <?= !$canAccessCommunication ? 'disabled style="background:red;color:#ffffff;opacity:0.8;cursor:not-allowed;"' : '' ?>>
                                 <i class="bi bi-trash"></i> Delete
-                            </button>
+                            </button> -->
                             <button onclick="window.location.href='../index.php'" type="button" class="btn btn-secondary" style="grid-column: 1 / -1;">
                                 <i class="bi bi-x-circle"></i> Close
                             </button>
@@ -278,53 +313,6 @@ $records = $recordsQuery->get_result();
         });
     });
 </script>
-
-<!-- <script>
-    document.addEventListener("DOMContentLoaded", function () {
-    const deleteBtn = document.getElementById('deleteBtn');
-
-    deleteBtn.addEventListener('click', function (e) {
-        e.preventDefault();
-
-        // Collect checked rows
-        const checked = document.querySelectorAll('.rowCheckbox:checked');
-        if (checked.length === 0) {
-            Swal.fire('No Selection', 'Please select at least one record to delete.', 'warning');
-            return;
-        }
-
-        const ids = Array.from(checked).map(cb => cb.closest('tr').dataset.id);
-
-        Swal.fire({
-            title: 'Confirm Delete',
-            html: `<p>Are you sure you want to delete the following records?</p>
-                   <strong>${ids.join(', ')}</strong>`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            confirmButtonText: 'Delete!'
-        }).then(result => {
-            if (result.isConfirmed) {
-                // Create a hidden form and submit
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = 'Controllers/CertificateController.php';
-
-                ids.forEach(id => {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'delete_ids[]';
-                    input.value = id;
-                    form.appendChild(input);
-                });
-
-                document.body.appendChild(form);
-                form.submit();
-            }
-        });
-    });
-});
-</script> -->
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -446,7 +434,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('description').value = data.description;
             document.getElementById('indorse_to').value = data.indorse_to || '';
             document.getElementById('date_routed').value = data.date_routed || '';
-            document.getElementById('action_taken').value = data.action_taken || '';
+            document.getElementById('routed_by').value = data.routed_by || '';
+            document.getElementById('action').value = data.action_taken || '';
             document.getElementById('remarks').value = data.remarks || '';
 
             // ✅ Show selected ComID in OUT Form
@@ -481,12 +470,12 @@ document.addEventListener("DOMContentLoaded", () => {
         // 3. Confirm with SweetAlert2
         Swal.fire({
             title: "Confirm Deletion",
-            html: `Are you sure you want to delete the selected record(s): <b>${comIds.join(", ")}</b>?`,
+            html: `Are you sure you want to delete the selected record(s):? <br> <b>${comIds.join(", ")}</b>`,
             icon: "warning",
             showCancelButton: true,
             confirmButtonColor: "#d33",
             cancelButtonColor: "#3085d6",
-            confirmButtonText: "Yes, delete them!"
+            confirmButtonText: "Delete!"
         }).then((result) => {
             if (result.isConfirmed) {
                 // 4. Create a temporary form to submit to controller
@@ -531,19 +520,33 @@ document.addEventListener("DOMContentLoaded", () => {
         <?php unset($_SESSION['save_success']); ?>
     <?php endif; ?>
 
-    // ✅ Show "Enter a new form" message when New is clicked
+    // Show "Enter a new form" message when New is clicked
     document.querySelector('.btn-custom[type="reset"]').addEventListener('click', function() {
-        let label = document.createElement('div');
-        label.textContent = 'Enter a new form.';
-        label.style.color = 'darkblue';
-        label.style.fontWeight = '600';
-        label.style.marginBottom = '8px';
-        label.id = 'newFormMsg';
-        label.style.textAlign = 'center';
+        // Reset form
+        document.getElementById('id').value = '';
+        document.getElementById('date_received').value = '';
+        document.getElementById('sender').value = '';
+        document.getElementById('description').value = '';
+        document.getElementById('indorse_to').value = '';
+        document.getElementById('date_routed').value = '';
+        document.getElementById('action_taken').value = '';
+        document.getElementById('remarks').value = '';
 
-        const comIdLabel = document.querySelector('label[for="com_id"]') || document.querySelector('.form-label');
+        // Set ComID to next value
+        const comIdInput = document.getElementById('com_id');
+        const lastComId = <?php echo $nextComID - 1; ?>; // last used ComID
+        comIdInput.value = lastComId + 1;
+
+        // Optional: Show message
         if (!document.getElementById('newFormMsg')) {
-            comIdLabel.parentNode.insertBefore(label, comIdLabel);
+            const label = document.createElement('div');
+            label.id = 'newFormMsg';
+            label.textContent = 'Enter a new form.';
+            label.style.color = 'darkblue';
+            label.style.fontWeight = '600';
+            label.style.textAlign = 'center';
+            label.style.marginBottom = '8px';
+            comIdInput.parentNode.insertBefore(label, comIdInput);
         }
     });
 </script>
@@ -575,6 +578,102 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('action_taken').value = data.action_taken;
         document.getElementById('remarks').value = data.remarks;
         });
+    });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const routedByInput = document.getElementById("routed_by");
+        const routedBySuggestions = document.getElementById("routedBySuggestions");
+
+        const actionInput = document.getElementById("action");
+        const actionSuggestions = document.getElementById("actionSuggestions");
+
+        // Fetch all unique routed_by and action values from the DB
+        const routedByList = [
+            <?php
+            $res = $conn->query("SELECT DISTINCT routed_by FROM communications WHERE routed_by IS NOT NULL ORDER BY routed_by ASC");
+            $arr = [];
+            while ($row = $res->fetch_assoc()) {
+                $arr[] = '"' . addslashes($row['routed_by']) . '"';
+            }
+            echo implode(',', $arr);
+            ?>
+        ];
+
+        const actionList = [
+            <?php
+            $res = $conn->query("SELECT DISTINCT action_taken FROM communications WHERE action_taken IS NOT NULL ORDER BY action_taken ASC");
+            $arr = [];
+            while ($row = $res->fetch_assoc()) {
+                $arr[] = '"' . addslashes($row['action_taken']) . '"';
+            }
+            echo implode(',', $arr);
+            ?>
+        ];
+
+        function setupAutocomplete(input, suggestions, list) {
+            function show(filtered) {
+                suggestions.innerHTML = '';
+                if (filtered.length === 0) {
+                    suggestions.style.display = 'none';
+                    return;
+                }
+                filtered.forEach(item => {
+                    const div = document.createElement('div');
+                    div.textContent = item;
+                    div.addEventListener('click', () => {
+                        input.value = item;
+                        suggestions.style.display = 'none';
+                    });
+                    suggestions.appendChild(div);
+                });
+                suggestions.style.display = 'block';
+            }
+
+            function filterAndShow() {
+                const value = input.value.toLowerCase();
+                const filtered = list.filter(d => d.toLowerCase().includes(value));
+                show(filtered);
+            }
+
+            input.addEventListener('input', filterAndShow);
+            input.addEventListener('focus', filterAndShow);
+            document.addEventListener('click', e => {
+                if (!input.contains(e.target) && !suggestions.contains(e.target)) {
+                    suggestions.style.display = 'none';
+                }
+            });
+        }
+
+        setupAutocomplete(routedByInput, routedBySuggestions, routedByList);
+        setupAutocomplete(actionInput, actionSuggestions, actionList);
+    });
+</script>
+
+<script>
+    // Table search functionality
+    const searchInput = document.getElementById("tableSearch");
+    const searchBtn = document.getElementById("searchBtn");
+    const table = document.getElementById("recordsTable");
+    const tableRows = table.querySelectorAll("tbody tr");
+
+    function filterTable() {
+        const query = searchInput.value.toLowerCase();
+        tableRows.forEach(row => {
+            const rowText = row.textContent.toLowerCase();
+            row.style.display = rowText.includes(query) ? "" : "none";
+        });
+    }
+
+    // Trigger search on button click
+    searchBtn.addEventListener("click", filterTable);
+
+    // Trigger search on Enter key
+    searchInput.addEventListener("keyup", (e) => {
+        if (e.key === "Enter") {
+            filterTable();
+        }
     });
 </script>
 </body>

@@ -1,0 +1,206 @@
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #f5f6fa;
+}
+
+/* Sidebar */
+.sidebar {
+    height: 100vh;
+    width: 250px;
+    background: #1e1e2d;
+    color: #fff;
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.sidebar .brand {
+    font-size: 20px;
+    font-weight: bold;
+    padding: 20px;
+    color: #0d6efd;
+    text-align: center;
+}
+
+.profile {
+    text-align: center;
+    padding: 10px 0;
+}
+
+.profile .circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #0d6efd;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 22px;
+    font-weight: bold;
+    margin: auto;
+}
+
+.profile p {
+    margin: 5px 0 0;
+    font-weight: 500;
+}
+
+.nav-menu a {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    color: #cfcfe0;
+    text-decoration: none;
+    border-radius: 8px;
+    margin: 5px 15px;
+    transition: 0.3s;
+}
+
+.nav-menu a i {
+    margin-right: 10px;
+}
+
+.nav-menu a.active,
+.nav-menu a:hover {
+    background: #0d6efd;
+    color: #fff;
+}
+
+.sidebar .footer {
+    font-size: 12px;
+    text-align: center;
+    padding: 15px;
+    color: #aaa;
+}
+
+/* Content */
+.content {
+    margin-left: 250px;
+    padding: 30px;
+}
+
+.welcome h5 {
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.welcome small {
+    color: #666;
+}
+
+/* Controls */
+.controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.controls .search input {
+    border-radius: 10px;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    width: 220px;
+}
+
+.controls .form-select {
+    border-radius: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    width: 180px;
+}
+
+.controls .btn-create {
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: 500;
+    background: #0d6efd;
+    color: #fff;
+    border: none;
+}
+
+.controls .btn-create:hover {
+    background: #0b5ed7;
+}
+
+/* Table */
+.card {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+table th {
+    background: #f5f5f9;
+    font-weight: 600;
+    color: #555;
+}
+
+table td {
+    vertical-align: middle;
+}
+
+.badge {
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px;
+}
+
+.badge.bg-success {
+    background: #22c55e !important;
+}
+
+.badge.bg-secondary {
+    background: #6b7280 !important;
+}
+
+.role-badge {
+    background: #e0f0ff;
+    color: #0d6efd;
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px;
+}
+
+/* Action buttons */
+.btn-action {
+    border-radius: 8px;
+    border: none;
+    width: 35px;
+    height: 35px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn-warning {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.btn-danger {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.btn-warning:hover {
+    background: #fcd34d;
+}
+
+.btn-danger:hover {
+    background: #ef4444;
+    color: #fff;
+}
+
+/* Pagination */
+.pagination .page-link {
+    border: none;
+    background: transparent;
+    color: #555;
+}
+
+.pagination .page-link:hover {
+    color: #0d6efd;
+}
