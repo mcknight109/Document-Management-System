@@ -268,17 +268,36 @@ document.addEventListener("DOMContentLoaded", () => {
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         const budgetInput = document.getElementById("budget");
+        const form = document.getElementById("activityForm");
 
-        // Format while typing (allow numbers and decimal)
-        budgetInput.addEventListener("input", function() {
-            this.value = this.value.replace(/[^\d.]/g, ''); // Only numbers & dot
+        // Format while typing
+        budgetInput.addEventListener("input", function () {
+            let value = this.value;
+
+            // Remove all characters except digits and dot
+            let clean = value.replace(/[^0-9.]/g, "");
+
+            // Allow only one dot
+            const parts = clean.split(".");
+            if (parts.length > 2) {
+                clean = parts[0] + "." + parts[1];
+            }
+
+            // Split integer and decimal parts
+            let [integerPart, decimalPart] = clean.split(".");
+
+            // Format integer part with commas
+            if (integerPart) {
+                integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            }
+
+            // Rejoin decimal part if exists
+            this.value = decimalPart !== undefined ? integerPart + "." + decimalPart : integerPart;
         });
 
-        // Add .00 automatically on blur
-        budgetInput.addEventListener("blur", function() {
-            if (this.value === "") return;
-            let val = parseFloat(this.value);
-            if (!isNaN(val)) this.value = val.toFixed(2);
+        // Before submitting: remove commas
+        form.addEventListener("submit", () => {
+            budgetInput.value = budgetInput.value.replace(/,/g, "");
         });
     });
 </script>

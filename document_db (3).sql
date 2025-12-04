@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 04, 2025 at 08:05 AM
+-- Generation Time: Dec 04, 2025 at 08:16 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -33,7 +33,7 @@ CREATE TABLE `activity_designs` (
   `control_no` varchar(50) NOT NULL,
   `department` varchar(255) NOT NULL,
   `activity_title` varchar(255) NOT NULL,
-  `budget` decimal(12,2) NOT NULL,
+  `budget` decimal(20,2) NOT NULL,
   `date_out` date NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -52,7 +52,9 @@ INSERT INTO `activity_designs` (`id`, `user_id`, `control_no`, `department`, `ac
 (62, 5, '7', 'Science Department', 'Lab Equipment Calibration', 18000.00, '2025-01-17', '2025-11-25 15:25:51'),
 (63, 5, '8', 'Sports Department', 'Sports Event Preparation', 10000.00, '2025-01-18', '2025-11-25 15:25:51'),
 (64, 5, '9', 'Library Department', 'Book Acquisition Activity', 7500.00, '2025-01-20', '2025-11-25 15:25:51'),
-(65, 5, '10', 'Security Department', 'Campus Security Audit', 9000.00, '2025-01-21', '2025-11-25 15:25:51');
+(65, 5, '10', 'Security Department', 'Campus Security Audit', 9000.00, '2025-01-21', '2025-11-25 15:25:51'),
+(66, 5, '11', 'Admin Department', 'Foam Party', 9999999999.99, '2025-12-04', '2025-12-04 07:14:44'),
+(67, 5, '12', 'Admin Department', 'Foam Party2', 100000000000000000.00, '2025-12-04', '2025-12-04 07:15:53');
 
 -- --------------------------------------------------------
 
@@ -412,7 +414,7 @@ ALTER TABLE `user_activity_logs`
 -- AUTO_INCREMENT for table `activity_designs`
 --
 ALTER TABLE `activity_designs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=66;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=68;
 
 --
 -- AUTO_INCREMENT for table `archived_users`
