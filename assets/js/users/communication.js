@@ -110,13 +110,12 @@ function printSlip() {
 
             <!-- HEADER -->
             <div class="header">
-                <img src="/document-recordsys/assets/images/office-of-treasurer.png">
+                <img src="../${siteLogo}" alt="Website Logo" class="logo">
                 <div style="text-align:center;">
                     <div>Office of the Treasurer</div>
-                    <div><strong>INTER-OFFICE <br>
-                    ROUTING SLIP</strong></div>
+                    <div><strong>INTER-OFFICE <br>ROUTING SLIP</strong></div>
                 </div>
-                <img src="/document-recordsys/assets/images/office-of-treasurer.png">
+                <img src="../${siteLogo}" alt="Website Logo" class="logo">
             </div>
 
             <div class="subject-box">

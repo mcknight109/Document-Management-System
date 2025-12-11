@@ -70,18 +70,24 @@ $total_pages = ceil($total_logs / $limit);
     <div>
         <div class="brand">ADMIN DASHBOARD</div>
         <div class="profile">
-            <img src="../assets/images/office-of-treasurer.png" alt="">
-            <p>
+        <?php
+$ws = $conn->query("SELECT logo FROM website_settings WHERE id=1")->fetch_assoc();
+$site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
+?>
+<img src="../<?= $site_logo ?>" 
+     alt="Website Logo" >            <p>
                 <?= htmlspecialchars($admin_fullname) ?><br>
                 <small><?= ucfirst($admin['role']) ?></small>
             </p>
         </div>
         <div class="nav-menu">
-            <a href="dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
-            <a href="user_manage.php"><i class="fas fa-users"></i> User Management</a>
-            <a href="record_logs.php" class="active"><i class="fa-solid fa-file"></i> Record Logs</a>
-            <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
-        </div>
+    <a href="dashboard.php" class="active"><i class="fas fa-home"></i> Dashboard</a>
+    <a href="user_manage.php"><i class="fas fa-users"></i> User Management</a>
+    <a href="website_settings.php"><i class="fas fa-cog"></i> Website Settings</a>
+    <a href="record_logs.php"><i class="fa-solid fa-file"></i> Record Logs</a>
+    <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
+
     </div>
     <div class="footer">© Document Record by ACLC Students</div>
 </div>

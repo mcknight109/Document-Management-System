@@ -87,8 +87,13 @@ if (isset($_SESSION['user_id'])) {
 <body>
 <!-- HEADER -->
 <div class="header">
-    <img src="assets/images/office-of-treasurer.png" alt="Logo" class="logo">
-    <h1>Document Records Management System</h1>
+<?php
+$ws = $conn->query("SELECT logo FROM website_settings WHERE id=1")->fetch_assoc();
+$site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
+?>
+<img src="<?= $site_logo ?>" 
+     alt="Website Logo" 
+     class="logo">    <h1>Document Records Management System</h1>
 
     <div class="header-right">
         <div class="header-user">
@@ -114,8 +119,13 @@ if (isset($_SESSION['user_id'])) {
 
 <div class="main-container">
     <div class="left-side">
-        <img src="assets/images/office-of-treasurer.png" alt="Logo">
-        <p>Administrative</p>
+    <?php
+$ws = $conn->query("SELECT logo FROM website_settings WHERE id=1")->fetch_assoc();
+$site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
+?>
+<img src="<?= $site_logo ?>" 
+     alt="Website Logo" 
+     >        <p>Administrative</p>
         <p>Division</p>
     </div>
 

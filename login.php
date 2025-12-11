@@ -3,6 +3,7 @@ session_start();
 include "db.php"; // database connection
 date_default_timezone_set('Asia/Manila');
 
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = $_POST['username']; 
     $password = $_POST['password'];
@@ -36,6 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $error = "Invalid Username or Password";
     }
 }
+
+
 ?>
 
 <!DOCTYPE html>
@@ -51,8 +54,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <!-- Left Side -->
         <div class="h-screen w-[50%] bg-[darkblue] flex flex-col items-center justify-center">
             <div class="h-[250px] w-[250px]" >
-                <img src="assets/images/office-of-treasurer.png" alt="" class="object-fill">
-            </div>
+            <?php
+$ws = $conn->query("SELECT logo FROM website_settings WHERE id=1")->fetch_assoc();
+$site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
+?>
+<img src="<?= $site_logo ?>" 
+     alt="Website Logo" 
+     class="h-full w-full object-contain">
+     </div>
             <div class="mt-[20px] text-white text-2xl">
                 <h2>Administrative Division</h2>
             </div>

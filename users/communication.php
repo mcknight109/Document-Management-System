@@ -7,6 +7,9 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+$ws = $conn->query("SELECT logo FROM website_settings WHERE id=1")->fetch_assoc();
+$site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
+
 $user_id = $_SESSION['user_id'];
 $query = $conn->prepare("SELECT first_name, middle_initial, last_name, username, permissions FROM users WHERE id = ?");
 $query->bind_param("i", $user_id);
@@ -92,8 +95,12 @@ if ($comResult->num_rows > 0) {
 
     <!-- HEADER -->
     <div class="header">
-        <img src="../assets/images/office-of-treasurer.png" alt="Logo" class="logo">
-        <h1>Document Records Management System</h1>
+    <?php
+$ws = $conn->query("SELECT logo FROM website_settings WHERE id=1")->fetch_assoc();
+$site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
+?>
+<img src="../<?= $site_logo ?>" 
+     alt="Website Logo" class="logo" >          <h1>Document Records Management System</h1>
 
         <div class="header-right">
             <div class="header-user">
@@ -296,6 +303,10 @@ if ($comResult->num_rows > 0) {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../assets/js/users/communication.js"></script>
     <script src="../date.js"></script>
+    <script>
+    const siteLogo = "<?= $site_logo ?>";
+</script>
+
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const profileBtn = document.getElementById("profileBtn");

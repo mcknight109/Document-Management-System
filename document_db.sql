@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 11, 2025 at 05:27 AM
+-- Generation Time: Dec 11, 2025 at 07:18 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -82,7 +82,6 @@ CREATE TABLE `archived_users` (
   `role` enum('admin','encoder') NOT NULL,
   `status` enum('Active','Inactive') NOT NULL,
   `permissions` longtext DEFAULT NULL,
-  `transmittal_id` int(11) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -90,8 +89,8 @@ CREATE TABLE `archived_users` (
 -- Dumping data for table `archived_users`
 --
 
-INSERT INTO `archived_users` (`id`, `original_user_id`, `first_name`, `middle_initial`, `last_name`, `username`, `email`, `password`, `role`, `status`, `permissions`, `transmittal_id`, `created_at`) VALUES
-(1, 9, 'John', 'M', 'Student', 'pyang', 'pyang@gmail.com', '$2y$10$X9.B9GhneNdkpKUI4NqsMOI9Gm/3AQffW1vLe6adSAUntJbeEUVp.', 'admin', 'Active', '[\"voucher_records\",\"check_records\",\"communications_records\",\"activity_records\",\"certificate_records\"]', 1116, '2025-11-26 02:53:00');
+INSERT INTO `archived_users` (`id`, `original_user_id`, `first_name`, `middle_initial`, `last_name`, `username`, `email`, `password`, `role`, `status`, `permissions`, `created_at`) VALUES
+(1, 9, 'John', 'M', 'Student', 'pyang', 'pyang@gmail.com', '$2y$10$X9.B9GhneNdkpKUI4NqsMOI9Gm/3AQffW1vLe6adSAUntJbeEUVp.', 'admin', 'Active', '[\"voucher_records\",\"check_records\",\"communications_records\",\"activity_records\",\"certificate_records\"]', '2025-11-26 02:53:00');
 
 -- --------------------------------------------------------
 
@@ -287,15 +286,11 @@ INSERT INTO `login_logs` (`id`, `user_id`, `username`, `role`, `login_time`) VAL
 (34, 1, 'admin', 'admin', '2025-11-24 11:28:26'),
 (35, 3, 'encoder', 'encoder', '2025-11-24 11:44:12'),
 (36, 1, 'admin', 'admin', '2025-11-24 11:45:22'),
-(37, 8, 'diane', 'admin', '2025-11-24 11:47:17'),
-(38, 8, 'diane', 'encoder', '2025-11-24 11:47:36'),
 (39, 5, 'mcky', 'encoder', '2025-11-24 12:01:53'),
-(40, 8, 'diane', 'encoder', '2025-11-25 13:53:00'),
 (41, 3, 'encoder', 'encoder', '2025-11-25 14:11:59'),
 (42, 1, 'admin', 'admin', '2025-11-26 01:49:39'),
 (43, 1, 'admin', 'admin', '2025-11-26 02:59:49'),
 (44, 3, 'encoder', 'encoder', '2025-11-26 06:14:22'),
-(45, 8, 'diane', 'encoder', '2025-11-26 06:17:26'),
 (46, 1, 'admin', 'admin', '2025-11-26 06:28:31'),
 (47, 3, 'encoder', 'encoder', '2025-11-26 06:32:55'),
 (48, 1, 'admin', 'admin', '2025-11-26 06:39:53'),
@@ -322,7 +317,19 @@ INSERT INTO `login_logs` (`id`, `user_id`, `username`, `role`, `login_time`) VAL
 (70, 5, 'mcky', 'encoder', '2025-12-11 02:39:53'),
 (71, 5, 'mcky', 'encoder', '2025-12-11 02:48:03'),
 (72, 1, 'admin', 'admin', '2025-12-11 03:50:25'),
-(73, 5, 'mcky', 'encoder', '2025-12-11 04:17:09');
+(73, 5, 'mcky', 'encoder', '2025-12-11 04:17:09'),
+(74, 1, 'admin', 'admin', '2025-12-11 04:38:39'),
+(75, 1, 'admin', 'admin', '2025-12-11 05:08:52'),
+(76, 1, 'admin', 'admin', '2025-12-11 05:09:48'),
+(77, 1, 'admin', 'admin', '2025-12-11 05:10:12'),
+(78, 3, 'encoder', 'encoder', '2025-12-11 05:11:08'),
+(79, 1, 'admin', 'admin', '2025-12-11 05:14:16'),
+(80, 3, 'encoder', 'encoder', '2025-12-11 05:14:41'),
+(81, 1, 'admin', 'admin', '2025-12-11 05:14:53'),
+(82, 3, 'encoder', 'encoder', '2025-12-11 05:16:02'),
+(83, 1, 'admin', 'admin', '2025-12-11 05:16:22'),
+(84, 5, 'mcky', 'encoder', '2025-12-11 05:28:43'),
+(85, 1, 'admin', 'admin', '2025-12-11 05:43:53');
 
 -- --------------------------------------------------------
 
@@ -370,11 +377,11 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `first_name`, `middle_initial`, `last_name`, `username`, `email`, `password`, `role`, `status`, `permissions`, `created_at`) VALUES
 (1, 'Admin', 'A.', 'Administrator', 'admin', 'user1@example.com', 'admin123', 'admin', '', NULL, '2025-10-29 03:21:47'),
-(3, 'Example', 'M.', 'Sample', 'encoder', 'user3@example.com', 'encoder123', 'encoder', 'Inactive', '[]', '2025-10-29 03:35:55'),
+(3, 'Example', 'M.', 'Sample', 'encoder', 'user3@example.com', 'encoder123', 'encoder', '', '[]', '2025-10-29 03:35:55'),
 (5, 'Neil', 'M.', 'Alferez', 'mcky', 'user5@example.com', 'neil123', 'encoder', '', '[\"voucher_records\",\"check_records\",\"communications_records\",\"activity_records\",\"certificate_records\"]', '2025-11-11 06:26:55'),
 (6, 'Marc', 'M.', 'Epe', 'marcky', 'marc@gmail.com', 'marc123', 'encoder', 'Active', NULL, '2025-11-24 03:52:03'),
 (7, 'Johnna', 'M', 'Quevedo', 'johnna', 'johnna@gmail.com', 'johnna123', 'encoder', 'Active', NULL, '2025-11-24 11:05:04'),
-(8, 'Diane', 'M', 'Alferez', 'diane', 'diane@gmail.com', 'diane123', 'encoder', 'Active', '[\"voucher_records\",\"check_records\",\"communications_records\",\"activity_records\",\"certificate_records\"]', '2025-11-24 11:46:10');
+(10, 'Diane', 'M', 'Alferez', 'diane', 'diane@gmail.com', 'diane123', 'encoder', 'Active', '0', '2025-11-24 11:46:10');
 
 -- --------------------------------------------------------
 
@@ -405,6 +412,25 @@ INSERT INTO `user_activity_logs` (`id`, `user_id`, `full_name`, `action`, `modul
 (37, 5, 'Neil M. Alferez', 'Checked Out Document', 'Check Document Records', 101, '20', 'Document marked as checked out, Check Num', '2025-12-11 00:40:01'),
 (38, 5, 'Neil M. Alferez', 'Updated Out Form Details', 'Communication Records', 53, '4', 'Out form details updated, Communication ID: ', '2025-12-11 01:16:41'),
 (39, 5, 'Neil M. Alferez', 'Added Certificate Record', 'Certificate Records', 0, '16', 'New Certificate record added, Control No: 16.', '2025-12-11 01:25:41');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `website_settings`
+--
+
+CREATE TABLE `website_settings` (
+  `id` int(11) NOT NULL,
+  `logo` varchar(255) NOT NULL,
+  `division_name` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `website_settings`
+--
+
+INSERT INTO `website_settings` (`id`, `logo`, `division_name`) VALUES
+(1, 'assets/images/1765432203_office-of-treasurer.png', '<br /><b>Warning</b>:  Trying to access array offset on value of type null in <b>C:xampphtdocsDocument-Management-Systemadminwebsite_settings.php</b> on line <b>152</b><br />');
 
 --
 -- Indexes for dumped tables
@@ -473,6 +499,12 @@ ALTER TABLE `user_activity_logs`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `website_settings`
+--
+ALTER TABLE `website_settings`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -486,7 +518,7 @@ ALTER TABLE `activity_designs`
 -- AUTO_INCREMENT for table `archived_users`
 --
 ALTER TABLE `archived_users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `certificate_records`
@@ -510,7 +542,7 @@ ALTER TABLE `documents`
 -- AUTO_INCREMENT for table `login_logs`
 --
 ALTER TABLE `login_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=74;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=86;
 
 --
 -- AUTO_INCREMENT for table `password_resets`
@@ -522,13 +554,19 @@ ALTER TABLE `password_resets`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `user_activity_logs`
 --
 ALTER TABLE `user_activity_logs`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
+
+--
+-- AUTO_INCREMENT for table `website_settings`
+--
+ALTER TABLE `website_settings`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- Constraints for dumped tables

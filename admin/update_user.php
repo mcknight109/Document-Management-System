@@ -64,11 +64,13 @@ $user_permissions = is_array($user_permissions) ? $user_permissions : [];
                 </p>
             </div>
             <div class="nav-menu">
-                <a href="dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
-                <a href="user_manage.php" class="active"><i class="fas fa-users"></i> User Management</a>
-                <a href="record_logs.php"><i class="fa-solid fa-file"></i> Record Logs</a>
-                <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
-            </div>
+    <a href="dashboard.php" class="active"><i class="fas fa-home"></i> Dashboard</a>
+    <a href="user_manage.php"><i class="fas fa-users"></i> User Management</a>
+    <a href="website_settings.php"><i class="fas fa-cog"></i> Website Settings</a>
+    <a href="record_logs.php"><i class="fa-solid fa-file"></i> Record Logs</a>
+    <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
+
         </div>
         <div class="footer">© Document Record by ACLC Students</div>
     </div>
