@@ -32,7 +32,7 @@ if ($result && $result->num_rows > 0) {
 	<title>Create User</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-	<link rel="stylesheet" href="../assets/css/admin/create.css">
+	<link rel="stylesheet" href="../assets/css/admin/create_account.css">
 </head>
 <body>
 
@@ -41,7 +41,7 @@ if ($result && $result->num_rows > 0) {
 		<div>
 			<div class="brand">ADMIN DASHBOARD</div>
 			<div class="profile">
-				<div class="circle">A</div>
+				<img src="../assets/images/office-of-treasurer.png" alt="">
 				<p>
                     <?= htmlspecialchars($admin_fullname) ?><br>
                     <small><?= ucfirst($admin['role']) ?></small>
@@ -49,9 +49,8 @@ if ($result && $result->num_rows > 0) {
 			</div>
 			<div class="nav-menu">
 				<a href="dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
-				<a href="users.php"><i class="fas fa-users"></i> Users</a>
-				<a href="create.php" class="active"><i class="fas fa-user-plus"></i> Create User</a>
-				<!-- <a href="#"><i class="fas fa-cog"></i> Accounts</a> -->
+				<a href="user_manage.php" class="active"><i class="fas fa-users"></i> User Management</a>
+                <a href="record_logs.php"><i class="fa-solid fa-file"></i> Record Logs</a>
 				<a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
 			</div>
 		</div>
@@ -140,7 +139,7 @@ if ($result && $result->num_rows > 0) {
 					</div>
 				</div>
 				<button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Save User</button>
-				<a href="users.php" class="btn btn-secondary ms-2">Cancel</a>
+				<a href="user_manage.php" class="btn btn-secondary ms-2">Cancel</a>
 			</form>
 		</div>
 	</div>
@@ -154,7 +153,7 @@ if ($result && $result->num_rows > 0) {
 		text: 'The new user account has been saved.',
 		confirmButtonColor: '#3085d6'
 	}).then(() => {
-		window.location.href = "users.php";
+		window.location.href = "user_manage.php";
 	});
 </script>
 <?php endif; ?>

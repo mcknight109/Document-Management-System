@@ -7,6 +7,17 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+function logUserActivity($conn, $user_id, $full_name, $action, $module, $reference_id = null, $reference_no = null, $description = null) {
+    $stmt = $conn->prepare("
+        INSERT INTO user_activity_logs 
+        (user_id, full_name, action, module, reference_id, reference_no, description) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ");
+    $stmt->bind_param("isssiss", $user_id, $full_name, $action, $module, $reference_id, $reference_no, $description);
+    $stmt->execute();
+    $stmt->close();
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
     $user_id = $_SESSION['user_id'];
     $control_no = trim($_POST['control_no']);
@@ -33,44 +44,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
 
         if ($stmt->execute()) {
             $_SESSION['save_success'] = true;
-        }
 
-        $stmt->close();
-    }
+            $user_id = $_SESSION['user_id'];
+            $result = $conn->query("SELECT first_name, middle_initial, last_name FROM users WHERE id = $user_id LIMIT 1");
+            $user = $result->fetch_assoc();
+            $full_name = trim($user['first_name'] . ' ' . ($user['middle_initial'] ?? '') . ' ' . $user['last_name']);
 
-    header("Location: ../activity_design.php");
-    exit;
-}
-
-// Delete selected records
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_ids']) && is_array($_POST['delete_ids'])) {
-    $user_id = $_SESSION['user_id'];
-    $ids = array_map('intval', $_POST['delete_ids']); // sanitize IDs
-
-    if (count($ids) > 0) {
-        // Create placeholders for prepared statement
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
-
-        // Prepare statement
-        $stmt = $conn->prepare("DELETE FROM activity_designs WHERE user_id = ? AND id IN ($placeholders)");
-
-        // Bind parameters dynamically
-        $types = str_repeat('i', count($ids) + 1); // +1 for user_id
-        $params = array_merge([$user_id], $ids);
-
-        // PHP 7+ dynamic binding
-        $tmp = [];
-        foreach ($params as $key => $value) {
-            $tmp[$key] = &$params[$key];
-        }
-
-        array_unshift($tmp, $types); // add types as first parameter
-        call_user_func_array([$stmt, 'bind_param'], $tmp);
-
-        if ($stmt->execute()) {
-            $_SESSION['delete_success'] = true;
-        } else {
-            $_SESSION['delete_error'] = true;
+            // Log activity
+            logUserActivity(
+                $conn,
+                $user_id,
+                $full_name,
+                "Added Activity Record",
+                "Activity Records",
+                $conn->insert_id,
+                $control_no,
+                "New Activity record added, Control No: $control_no. "
+            );
         }
 
         $stmt->close();

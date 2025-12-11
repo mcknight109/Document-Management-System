@@ -49,7 +49,7 @@ if (!empty($_POST['password'])) {
 }
 
 if ($stmt->execute()) {
-    header("Location: ../edit.php?id=$user_id&msg=updated");
+    header("Location: ../update_user.php?id=$user_id&msg=updated");
     exit();
 } else {
     echo "Error updating user: " . $conn->error;

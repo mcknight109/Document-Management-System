@@ -15,7 +15,7 @@ $recordedBy = $_SESSION['username'];
 
 // Fetch user's full name from the database
 $user_id = $_SESSION['user_id'];
-$query = $conn->prepare("SELECT transmittal_id, first_name, middle_initial, last_name, username, permissions FROM users WHERE id = ?");
+$query = $conn->prepare("SELECT first_name, middle_initial, last_name, username, permissions FROM users WHERE id = ?");
 $query->bind_param("i", $user_id);
 $query->execute();
 $result = $query->get_result();
@@ -72,7 +72,35 @@ $currentDate = date("M d, Y");
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
+    .print-modal {
+        width: 1000px;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
 
+    .print-preview-area {
+        background: #ffffffff;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    .paper {
+        width: 210mm;            /* A4 width */
+        min-height: 297mm;       /* A4 height */
+        padding: 20mm;
+        margin: auto;
+        background: white;
+        box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        color: #000;
+        font-family: "Times New Roman", serif;
+    }
+
+    .paper-content {
+        font-size: 13px;
+        white-space: pre-wrap;
+    }
 </style>
 </head>
 <body>
@@ -105,10 +133,7 @@ $currentDate = date("M d, Y");
 
 <div class="navbar">
     <div class="left">
-        <i class="fa-solid fa-folder-open" style="color:var(--primary-blue);"></i>
-        <label>Transmittal ID:</label>
-        <span><?php echo htmlspecialchars($user['transmittal_id']); ?></span>
-        <span>Voucher Records Management</span>
+        Voucher Records Management
     </div>
     <div class="right">
         <div class="search-container">
@@ -141,7 +166,7 @@ $currentDate = date("M d, Y");
                     $dateIn = $row['date_in'] ? date('M d, Y h:i A', strtotime($row['date_in'])) : '-';
                     $dateOut = $row['date_out'] ? date('M d, Y h:i A', strtotime($row['date_out'])) : '-';
 
-                    echo "<tr onclick='openCheckModal(" . json_encode($row) . ")'>
+                    echo "<tr>
                         <td><input type='checkbox' class='rowCheckbox' value='{$row['id']}' onclick='event.stopPropagation();'></td>
                         <td>{$row['control_no']}</td>
                         <td>{$row['payee']}</td>
@@ -172,11 +197,7 @@ $currentDate = date("M d, Y");
             <i class="fa-solid fa-plus"></i> Add Record
         </button>
 
-        <!-- <button onclick="deleteSelected()" <?= !$canAccessVoucher ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '' ?>>
-            <i class="fa-solid fa-trash"></i> Delete Record
-        </button> -->
-
-        <button onclick="printDoc()" <?= !$canAccessVoucher ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '' ?>>
+        <button onclick="printSelectedTransmittal()">
             <i class="fa-solid fa-print"></i> Transmittal Print
         </button>
 
@@ -234,6 +255,7 @@ $currentDate = date("M d, Y");
         </form>
     </div>
 </div>
+<script src="../assets/js/users/voucher_print.js"></script>
 <script src="../date.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", () => {

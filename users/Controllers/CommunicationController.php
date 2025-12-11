@@ -7,7 +7,18 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// ADD NEW COMMUNICATION RECORD
+function logUserActivity($conn, $user_id, $full_name, $action, $module, $reference_id = null, $reference_no = null, $description = null) {
+    $stmt = $conn->prepare("
+        INSERT INTO user_activity_logs 
+        (user_id, full_name, action, module, reference_id, reference_no, description) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ");
+    $stmt->bind_param("isssiss", $user_id, $full_name, $action, $module, $reference_id, $reference_no, $description);
+    $stmt->execute();
+    $stmt->close();
+}
+
+// ADD IN FORM DETAILS 
 if (isset($_POST['save']) && empty($_POST['id'])) {
     $user_id = $_SESSION['user_id'];
     $com_id = $_POST['com_id'];
@@ -22,6 +33,22 @@ if (isset($_POST['save']) && empty($_POST['id'])) {
 
     if ($stmt->execute()) {
         $_SESSION['save_success'] = true;
+
+        $user_id = $_SESSION['user_id'];
+        $result = $conn->query("SELECT first_name, middle_initial, last_name FROM users WHERE id = $user_id LIMIT 1");
+        $user = $result->fetch_assoc();
+        $full_name = trim($user['first_name'] . ' ' . ($user['middle_initial'] ?? '') . ' ' . $user['last_name']);
+
+        logUserActivity(
+            $conn,
+            $user_id,
+            $full_name,
+            "Added Communication Record",
+            "Communication Records",
+            $conn->insert_id,
+            $com_id,
+            "New communication record added, Communication ID: $com_id."
+        );
     }
     header("Location: ../communication.php");
     exit;
@@ -43,29 +70,27 @@ if (isset($_POST['save_edit']) && !empty($_POST['id'])) {
 
     if ($stmt->execute()) {
         $_SESSION['edit_success'] = true;
-    }
-    header("Location: ../communication.php");
-    exit;
-}
 
-// DELETE SELECTED RECORDS
-if (isset($_POST['delete']) && isset($_POST['delete_ids']) && is_array($_POST['delete_ids'])) {
-    $ids = array_map('intval', $_POST['delete_ids']);
+        // --- Log user activity ---
+        $user_id = $_SESSION['user_id'];
+        $result = $conn->query("SELECT first_name, middle_initial, last_name, com_id FROM users u JOIN communications c ON c.id = $id WHERE u.id = $user_id LIMIT 1");
+        $user = $result->fetch_assoc();
+        $full_name = trim(
+            ($user['first_name'] ?? '') . ' ' .
+            (!empty($user['middle_initial']) ? strtoupper(substr($user['middle_initial'], 0, 1)) . '. ' : '') .
+            ($user['last_name'] ?? '')
+        );
 
-    if (count($ids) > 0) {
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $types = str_repeat('i', count($ids));
-
-        $stmt = $conn->prepare("DELETE FROM communications WHERE id IN ($placeholders)");
-        $stmt->bind_param($types, ...$ids);
-
-        if ($stmt->execute()) {
-            $_SESSION['delete_success'] = true;
-        } else {
-            $_SESSION['delete_error'] = true;
-        }
-    } else {
-        $_SESSION['delete_error'] = true;
+        logUserActivity(
+            $conn,
+            $user_id,
+            $full_name,
+            "Updated Out Form Details",
+            "Communication Records",
+            $id,
+            $user['com_id'] ?? null,
+            "Out form details updated, Communication ID: $com_id"
+        );
     }
 
     header("Location: ../communication.php");

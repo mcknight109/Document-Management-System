@@ -54,7 +54,7 @@ $totalRecords = $totalResult['total'];
 $totalPages = ceil($totalRecords / $limit);
 
 // Fetch paginated records
-$activitiesQuery = $conn->prepare("SELECT * FROM activity_designs ORDER BY id DESC");
+$activitiesQuery = $conn->prepare("SELECT * FROM activity_designs ORDER BY CAST(control_no AS UNSIGNED) ASC");
 $activitiesQuery->execute();
 $activities = $activitiesQuery->get_result();
 
@@ -267,6 +267,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
 <script>
     document.addEventListener("DOMContentLoaded", () => {
+        const form = document.getElementById("activityForm");
+
+        form.addEventListener("submit", function(e) {
+            // Check if any row checkbox is selected
+            const checkedRows = document.querySelectorAll(".rowCheckbox:checked");
+            if (checkedRows.length > 0) {
+                e.preventDefault(); // Prevent form submission
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Invalid Action',
+                    text: 'Please unselect all records from the table before creating a new activity.',
+                    confirmButtonColor: '#d33'
+                });
+                return false;
+            }
+        });
+    });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
         const budgetInput = document.getElementById("budget");
         const form = document.getElementById("activityForm");
 
@@ -327,31 +348,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
 <script>
     document.querySelector('.btn-custom[type="reset"]').addEventListener('click', function() {
-        // Reset form
-        document.getElementById('id').value = '';
-        document.getElementById('date_received').value = '';
-        document.getElementById('sender').value = '';
-        document.getElementById('description').value = '';
-        document.getElementById('indorse_to').value = '';
-        document.getElementById('date_routed').value = '';
-        document.getElementById('action_taken').value = '';
-        document.getElementById('remarks').value = '';
+        // Reset form fields
+        document.getElementById('department').value = '';
+        document.getElementById('activity_title').value = '';
+        document.getElementById('budget').value = '';
+        document.getElementById('date_out').value = '';
 
-        // Set ComID to next value
-        const comIdInput = document.getElementById('com_id');
-        const lastComId = <?php echo $nextComID - 1; ?>; // last used ComID
-        comIdInput.value = lastComId + 1;
+        // Set Control No to next value
+        const controlNoInput = document.getElementById('control_no');
+        const nextConID = <?php echo $nextConID; ?>;
+        controlNoInput.value = nextConID;
 
-        // Optional: Show message
+        // Optional: Show message above Control No label
         if (!document.getElementById('newFormMsg')) {
-            const label = document.createElement('div');
-            label.id = 'newFormMsg';
-            label.textContent = 'Enter a new form.';
-            label.style.color = 'darkblue';
-            label.style.fontWeight = '600';
-            label.style.textAlign = 'center';
-            label.style.marginBottom = '8px';
-            comIdInput.parentNode.insertBefore(label, comIdInput);
+            const message = document.createElement('div');
+            message.id = 'newFormMsg';
+            message.textContent = 'Enter a new activity record.';
+            message.style.color = 'darkblue';
+            message.style.fontWeight = '600';
+            message.style.textAlign = 'center';
+            message.style.marginBottom = '8px';
+
+            // Insert above the whole "Control No." wrapper
+            const controlWrapper = controlNoInput.closest('.mb-2');
+            controlWrapper.parentNode.insertBefore(message, controlWrapper);
         }
     });
 </script>

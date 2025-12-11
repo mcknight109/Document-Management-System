@@ -50,5 +50,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'])) {
 }
 
 // Redirect with a success flag
-header("Location: ../users.php?msg=deleted");
+header("Location: ../user_manage.php?msg=deleted");
 exit();

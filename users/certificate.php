@@ -59,13 +59,13 @@ $totalRecords = $totalResult['total'];
 $totalPages = ceil($totalRecords / $limit);
 
 // Fetch paginated certificate records
-$recordsQuery = $conn->prepare("SELECT * FROM certificate_records ORDER BY id DESC");
+$recordsQuery = $conn->prepare("SELECT * FROM certificate_records ORDER BY CAST(control_no AS UNSIGNED) ASC");
 $recordsQuery->execute();
 $records = $recordsQuery->get_result();
 
 // Get the next ConID
 $nextConID = 1; // default if table is empty
-$conQuery = $conn->prepare("SELECT control_no FROM certificate_records ORDER BY id DESC LIMIT 1");
+$conQuery = $conn->prepare("SELECT control_no FROM certificate_records ORDER BY CAST(control_no AS UNSIGNED) DESC LIMIT 1");
 $conQuery->execute();
 $conResult = $conQuery->get_result();
 
@@ -216,9 +216,10 @@ if ($conResult->num_rows > 0) {
                         <label class="form-label">Date Out</label>
                         <input type="date" name="date_out" id="date_out" class="form-control">
                     </div>
-                    <div class="mb-2">
+                    <div class="mb-2 position-relative">
                         <label class="form-label">Claimed By</label>
-                        <input type="text" name="claimed_by" id="claimed_by" class="form-control" placeholder="Claimed By.">
+                        <input type="text" name="claimed_by" id="claimed_by" class="form-control" placeholder="Claimed By." autocomplete="off">
+                        <div id="claimedBySuggestions" class="suggestions-dropdown"></div>
                     </div>
 
                     <div class="form-buttons">
@@ -228,9 +229,9 @@ if ($conResult->num_rows > 0) {
                         <button type="submit" name="save" class="btn btn-custom" <?= !$canAccessCertificate ? 'disabled style="background:darkblue;color:#ffffff;opacity:0.8;cursor:not-allowed;"' : '' ?>>
                             <i class="bi bi-save"></i> Save
                         </button>
-                        <button type="button" id="deleteBtn" class="btn btn-danger" <?= !$canAccessCertificate ? 'disabled style="background:red;color:#ffffff;opacity:0.8;cursor:not-allowed;"' : '' ?>>
+                        <!-- <button type="button" id="deleteBtn" class="btn btn-danger" <?= !$canAccessCertificate ? 'disabled style="background:red;color:#ffffff;opacity:0.8;cursor:not-allowed;"' : '' ?>>
                             <i class="bi bi-trash"></i> Delete
-                        </button>
+                        </button> -->
                         <button onclick="window.location.href='../index.php'" type="button" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Close
                         </button>
@@ -264,6 +265,30 @@ if ($conResult->num_rows > 0) {
         // Keep menu open if clicking inside
         profileMenu.addEventListener("click", function(e) {
             e.stopPropagation();
+        });
+    });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const certificateForm = document.getElementById("certificateForm");
+
+        certificateForm.addEventListener("submit", function(e) {
+            // Check if any row checkboxes are selected
+            const selectedRows = document.querySelectorAll('.rowCheckbox:checked');
+
+            if (selectedRows.length > 0) {
+                // Prevent form submission
+                e.preventDefault();
+
+                // Show warning popup
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Invalid Action',
+                    text: 'You cannot create a new certificate record while selecting existing records in the table.',
+                    confirmButtonColor: '#1e3a8a'
+                });
+            }
         });
     });
 </script>
@@ -373,56 +398,75 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 <script>
-    const deleteBtn = document.getElementById('deleteBtn');
+    document.addEventListener("DOMContentLoaded", () => {
+        const officeInput = document.getElementById("office");
+        const officeSuggestions = document.getElementById("officeSuggestions");
 
-    deleteBtn.addEventListener('click', function (e) {
-        e.preventDefault();
+        const claimedByInput = document.getElementById("claimed_by");
+        const claimedBySuggestions = document.getElementById("claimedBySuggestions");
 
-        const checked = document.querySelectorAll('.rowCheckbox:checked');
+        // Fetch DISTINCT values from certificate_records
+        const officeList = [
+            <?php
+            $res = $conn->query("SELECT DISTINCT office FROM certificate_records WHERE office IS NOT NULL ORDER BY office ASC");
+            $arr = [];
+            while ($row = $res->fetch_assoc()) {
+                $arr[] = '"' . addslashes($row['office']) . '"';
+            }
+            echo implode(',', $arr);
+            ?>
+        ];
 
-        if (checked.length === 0) {
-            Swal.fire('No Selection', 'Please select at least one record to delete.', 'warning');
-            return;
+        const claimedByList = [
+            <?php
+            $res = $conn->query("SELECT DISTINCT claimed_by FROM certificate_records WHERE claimed_by IS NOT NULL ORDER BY claimed_by ASC");
+            $arr = [];
+            while ($row = $res->fetch_assoc()) {
+                $arr[] = '"' . addslashes($row['claimed_by']) . '"';
+            }
+            echo implode(',', $arr);
+            ?>
+        ];
+
+        // Reusable Autocomplete Function
+        function setupAutocomplete(input, suggestions, list) {
+            function show(filtered) {
+                suggestions.innerHTML = '';
+                if (filtered.length === 0) {
+                    suggestions.style.display = 'none';
+                    return;
+                }
+                filtered.forEach(item => {
+                    const div = document.createElement('div');
+                    div.textContent = item;
+                    div.addEventListener('click', () => {
+                        input.value = item;
+                        suggestions.style.display = 'none';
+                    });
+                    suggestions.appendChild(div);
+                });
+                suggestions.style.display = 'block';
+            }
+
+            function filterAndShow() {
+                const value = input.value.toLowerCase().trim();
+                const filtered = list.filter(d => d.toLowerCase().includes(value));
+                show(filtered);
+            }
+
+            input.addEventListener('input', filterAndShow);
+            input.addEventListener('focus', filterAndShow);
+
+            document.addEventListener('click', e => {
+                if (!input.contains(e.target) && !suggestions.contains(e.target)) {
+                    suggestions.style.display = 'none';
+                }
+            });
         }
 
-        // 🔹 Collect Control Numbers for confirmation popup
-        const controlNos = Array.from(checked).map(cb =>
-            cb.closest('tr').children[1].textContent.trim()
-        );
-
-        // 🔹 Collect IDs (needed for controller)
-        const ids = Array.from(checked).map(cb =>
-            cb.closest('tr').dataset.id
-        );
-
-        Swal.fire({
-            title: 'Confirm Delete',
-            html: `<p>Are you sure you want to delete the following Control No(s)?</p>
-                   <strong>${controlNos.join(', ')}</strong>`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            confirmButtonText: 'Delete'
-        }).then(result => {
-            if (result.isConfirmed) {
-
-                // Clear old hidden inputs
-                const form = document.getElementById("certificateForm");
-                form.querySelectorAll('input[name="delete_ids[]"]').forEach(el => el.remove());
-
-                // Add a hidden input for each selected ID
-                ids.forEach(id => {
-                    const input = document.createElement("input");
-                    input.type = "hidden";
-                    input.name = "delete_ids[]";
-                    input.value = id;
-                    form.appendChild(input);
-                });
-
-                // Submit the form
-                form.submit();
-            }
-        });
+        // Apply Autocomplete
+        setupAutocomplete(officeInput, officeSuggestions, officeList);
+        setupAutocomplete(claimedByInput, claimedBySuggestions, claimedByList);
     });
 </script>
 

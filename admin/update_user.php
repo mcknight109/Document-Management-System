@@ -49,7 +49,7 @@ $user_permissions = is_array($user_permissions) ? $user_permissions : [];
     <title>Edit User</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="../assets/css/admin/edit.css" rel="stylesheet">
+    <link href="../assets/css/admin/update_user.css" rel="stylesheet">
 </head>
 <body>
 
@@ -57,7 +57,7 @@ $user_permissions = is_array($user_permissions) ? $user_permissions : [];
         <div>
             <div class="brand">ADMIN DASHBOARD</div>
             <div class="profile">
-                <div class="circle">A</div>
+                <img src="../assets/images/office-of-treasurer.png" alt="">
                 <p>
                     <?= htmlspecialchars($admin_fullname) ?><br>
                     <small><?= ucfirst($admin['role']) ?></small>
@@ -65,7 +65,8 @@ $user_permissions = is_array($user_permissions) ? $user_permissions : [];
             </div>
             <div class="nav-menu">
                 <a href="dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
-                <a href="users.php" class="active"><i class="fas fa-users"></i> Users</a>
+                <a href="user_manage.php" class="active"><i class="fas fa-users"></i> User Management</a>
+                <a href="record_logs.php"><i class="fa-solid fa-file"></i> Record Logs</a>
                 <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
         </div>
@@ -156,7 +157,7 @@ $user_permissions = is_array($user_permissions) ? $user_permissions : [];
                 </div>
 
                 <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Update</button>
-                <a href="users.php" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i> Cancel</a>
+                <a href="user_manage.php" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i> Cancel</a>
             </form>
         </div>
     </div>
@@ -171,7 +172,7 @@ $user_permissions = is_array($user_permissions) ? $user_permissions : [];
             text: 'The user account details have been saved.',
             confirmButtonColor: '#3085d6'
         }).then(() => {
-            window.location.href = "users.php";
+            window.location.href = "user_manage.php";
         });
     </script>
 <?php endif; ?>

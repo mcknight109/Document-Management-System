@@ -503,10 +503,10 @@ hr {
 }
 
 .action-btn:hover {
-    background-color: darkblue;
+    background-color: #d8d8d8;
     transform: translateY(-1px);
     box-shadow: 0 3px 6px rgba(0,0,0,0.15);
-    color: #ffffff;
+    color: #000000;
 }
 
 .action-btn:active {
@@ -596,7 +596,7 @@ hr {
 }
 
 .action-modal ul li:hover {
-    background-color: rgb(216, 216, 216);
+    background-color: #d8d8d8;
     color: rgb(0, 0, 0);
     border-radius: 6px;
 }

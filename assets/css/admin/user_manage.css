@@ -21,6 +21,7 @@ body {
     font-size: 20px;
     font-weight: bold;
     padding: 20px;
+    padding: 20px 20px 8px 20px;
     color: #0d6efd;
     text-align: center;
 }
@@ -30,11 +31,11 @@ body {
     padding: 10px 0;
 }
 
-.profile .circle {
-    width: 60px;
-    height: 60px;
+.profile img {
+    width: 90px;
+    height: 90px;
     border-radius: 50%;
-    background: #0d6efd;
+    background: #ffffff;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -44,7 +45,7 @@ body {
 }
 
 .profile p {
-    margin: 5px 0 0;
+    margin: 15px 0 0;
     font-weight: 500;
 }
 
@@ -76,7 +77,6 @@ body {
     color: #aaa;
 }
 
-/* Content */
 .content {
     margin-left: 250px;
     padding: 30px;
@@ -125,6 +125,23 @@ body {
     background: #0b5ed7;
 }
 
+/* Create Account Button */
+.btn-create {
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: 500;
+    background: #0d6efd;
+    color: #fff;
+    border: none;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-create:hover {
+    background: #0b5ed7;
+    color: white;
+}
+
 /* Table */
 .card {
     border-radius: 12px;
@@ -136,6 +153,7 @@ table th {
     background: #f5f5f9;
     font-weight: 600;
     color: #555;
+    width: 10%;
 }
 
 table td {
@@ -162,6 +180,74 @@ table td {
     border-radius: 20px;
     padding: 5px 12px;
     font-size: 12px;
+}
+
+.pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.pagination-controls .btn-outline-secondary {
+    border: 1.5px solid #e5e7eb;
+    color: #6b7280;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.pagination-controls .btn-outline-secondary:hover {
+    background: #1e3a8a;
+    border-color: #1e3a8a;
+    color: white;
+}
+
+.page-info {
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+/* Controls */
+.controls {
+    display: flex;
+    justify-content: space-between; /* Left + Right layout */
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.controls input,
+.controls select,
+.controls button {
+    height: 42px;
+    border-radius: 12px;
+    font-size: 14px;
+    border: 1px solid #ddd;
+}
+
+.controls input:focus,
+.controls select:focus,
+.controls button:focus {
+    outline: none;
+    box-shadow: 0 0 5px rgba(13, 110, 253, 0.5);
+    border-color: #0d6efd;
+}
+
+.controls button {
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+    padding: 0 18px;
+    transition: 0.3s;
+}
+
+.controls button:hover {
+    background-color: #0b5ed7;
+}
+
+.controls select {
+    width: 220px; /* Adjust as needed */
 }
 
 /* Action buttons */

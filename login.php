@@ -18,11 +18,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $_SESSION['role'] = $user['role'];
         $_SESSION['username'] = $user['username'];
 
-        // ✅ Update status to active
         $uid = $user['id'];
-        $conn->query("UPDATE users SET status='active' WHERE id='$uid'");
 
-        // ✅ Insert log with role
+        // Insert log with role
         $uname = $conn->real_escape_string($user['username']);
         $urole = $conn->real_escape_string($user['role']);
         $conn->query("INSERT INTO login_logs (user_id, username, role) VALUES ('$uid', '$uname', '$urole')");
@@ -35,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         exit;
     } else {
-        echo "<script>alert('Invalid Username or Password');</script>";
+        $error = "Invalid Username or Password";
     }
 }
 ?>
@@ -64,6 +62,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <form method="POST" class="space-y-6">
             <!-- Title -->
             <h1 class="text-center font-bold text-xl text-gray-800">LOGIN YOUR ACCOUNT</h1>
+            <?php if (!empty($error)): ?>
+                <p class="text-center text-red-600 text-sm mt-1"><?= $error ?></p>
+            <?php endif; ?>
 
             <!-- Username -->
             <div>

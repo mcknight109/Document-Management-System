@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     if (empty($first_name) || empty($last_name) || empty($username) || empty($email) || empty($password)) {
         $_SESSION['error'] = "All required fields must be filled out.";
-        header("Location: ../create.php");
+        header("Location: ../create_account.php");
         exit;
     }
 
@@ -57,18 +57,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     );
 
     if ($stmt->execute()) {
-        header("Location: ../create.php?msg=success");
+        header("Location: ../create_account.php?msg=success");
         exit();
     } else {
         $_SESSION['error'] = "Error creating user: " . $conn->error;
-        header("Location: ../create.php");
+        header("Location: ../create_account.php");
     }
 
     $stmt->close();
     $conn->close();
 
 } else {
-    header("Location: ../create.php");
+    header("Location: ../create_account.php");
     exit;
 }
 
