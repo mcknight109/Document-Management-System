@@ -66,12 +66,13 @@ $currentDate = date("M d, Y");
 
     <!-- HEADER -->
     <div class="header">
-    <?php
-$ws = $conn->query("SELECT logo FROM website_settings WHERE id=1")->fetch_assoc();
-$site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
-?>
-<img src="../<?= $site_logo ?>" 
-     alt="Website Logo" class="logo" >          <h1>Document Records Management System</h1>
+        <?php
+        $ws = $conn->query("SELECT logo FROM website_settings WHERE id=1")->fetch_assoc();
+        $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
+        ?>
+        <img src="../<?= $site_logo ?>"
+            alt="Website Logo" class="logo">
+        <h1>Document Records Management System</h1>
 
         <div class="header-right">
             <div class="header-user">
@@ -158,12 +159,55 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
                     <li id="checkReleaseOption"><i class="bi bi-file-earmark-check"></i> Check Release</li>
                 </ul>
             </div>
-            <div class="footer">
-                <button>&laquo;</button>
-                <button>&lsaquo;</button>
-                <button>&rsaquo;</button>
-                <button>&raquo;</button>
-            </div>
+          <div class="footer">
+    <button>&laquo;</button>
+    <button>&lsaquo;</button>
+    <button>&rsaquo;</button>
+    <button>&raquo;</button>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const rowsPerPage = 11; // Number of rows per page
+    const table = document.getElementById("recordsTable");
+    const tbody = table.querySelector("tbody");
+    const allRows = Array.from(tbody.querySelectorAll("tr"));
+    const footerButtons = document.querySelector(".footer").querySelectorAll("button");
+
+    let currentPage = 1;
+    const totalPages = Math.ceil(allRows.length / rowsPerPage);
+
+    function renderPage(page) {
+        currentPage = page;
+
+        // Hide all rows
+        allRows.forEach(row => row.style.display = "none");
+
+        // Calculate start/end index
+        const start = (page - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+
+        // Show current page rows
+        allRows.slice(start, end).forEach(row => row.style.display = "");
+
+        // Enable/disable buttons
+        footerButtons[0].disabled = currentPage === 1; // First <<
+        footerButtons[1].disabled = currentPage === 1; // Prev <
+        footerButtons[2].disabled = currentPage === totalPages; // Next >
+        footerButtons[3].disabled = currentPage === totalPages; // Last >>
+    }
+
+    // Footer button events
+    footerButtons[0].addEventListener("click", () => renderPage(1)); // First <<
+    footerButtons[1].addEventListener("click", () => renderPage(currentPage - 1)); // Prev <
+    footerButtons[2].addEventListener("click", () => renderPage(currentPage + 1)); // Next >
+    footerButtons[3].addEventListener("click", () => renderPage(totalPages)); // Last >>
+
+    // Initial render
+    renderPage(1);
+});
+</script>
+
         </div>
 
         <div class="button-panel">
@@ -171,6 +215,9 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
             <button onclick="printCheck()"><i class="fa-solid fa-print"></i> Check Print</button>
             <button onclick="printSelectedCheckTransmittal()">
                 <i class="fa-solid fa-print"></i> Transmittal Print
+            </button>
+            <button onclick="deleteSelected()" style="background-color:#dc2626; color:#fff;">
+                <i class="fa-solid fa-trash"></i> Delete Selected
             </button>
             <button onclick="window.location.href='../index.php'" style="background-color: #4b5563;"><i class="fa-solid fa-xmark"></i> Exit</button>
         </div>
@@ -204,7 +251,14 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
 
                 <div class="form-group">
                     <label>Check Number</label>
-                    <input type="number" id="checkNo" name="checkNo" readonly>
+                        <input 
+                            type="tel"
+                            inputmode="numeric"
+                            id="checkNo"
+                            name="checkNo"
+                            placeholder="00000000"
+                            required
+                        >
                 </div>
 
                 <div class="form-group">
@@ -302,9 +356,8 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
                     document.getElementById("payee").value = data.payee;
                     document.getElementById("dateIn").value = data.date_in_formatted;
 
-                    // AUTO RANDOM 8-DIGIT CHECK NUMBER
-                    let randomCheck = Math.floor(10000000 + Math.random() * 90000000);
-                    document.getElementById("checkNo").value = randomCheck;
+                    // Default to 8 zeros if empty
+                    document.getElementById("checkNo").value = "00000000";
 
                     document.getElementById("checkRecordModal").style.display = "flex";
                 });
@@ -313,36 +366,133 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
         function closeModal() {
             document.getElementById("checkRecordModal").style.display = "none";
         }
+
+        function deleteSelected() {
+            const selectedCheckboxes = document.querySelectorAll(".record-checkbox:checked");
+
+            if (selectedCheckboxes.length === 0) {
+                Swal.fire("No record selected", "Please select at least one row to delete.", "info");
+                return;
+            }
+
+            let ids = [];
+            let controlNums = [];
+
+            selectedCheckboxes.forEach(cb => {
+                ids.push(cb.value);
+                let controlNum = cb.closest("tr").children[1].textContent.trim();
+                controlNums.push(controlNum);
+            });
+
+            Swal.fire({
+                title: 'Confirm Delete',
+                html: `<p>Are you sure you want to delete the following Control No.?</p><b>${controlNums.join(", ")}</b>`,
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, delete",
+                cancelButtonText: "Cancel",
+                confirmButtonColor: "#d33"
+            }).then(result => {
+                if (result.isConfirmed) {
+                    fetch("Controllers/CheckController.php", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ action: "delete", ids })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: "success",
+                                title: "Deleted successfully!",
+                                timer: 1200,
+                                showConfirmButton: false
+                            }).then(() => location.reload());
+                        } else {
+                            Swal.fire("Error", data.error || "Failed to delete records.", "error");
+                        }
+                    })
+                    .catch(() => Swal.fire("Error", "Request failed.", "error"));
+                }
+            });
+        }
     </script>
 
     <script>
         document.getElementById("checkForm").addEventListener("submit", function(e) {
             e.preventDefault();
 
+            const checkNoInput = document.getElementById("checkNo");
+            let checkNo = checkNoInput.value.trim();
+
+            // If empty → force 8 zeros
+            if (checkNo === "") {
+                checkNo = "00000000";
+                checkNoInput.value = checkNo;
+            }
+
+            // Must be exactly 8 digits
+            if (!/^\d{8}$/.test(checkNo)) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Invalid Check Number",
+                    text: "Check Number must be exactly 8 digits."
+                });
+                return;
+            }
+
             let formData = new FormData(this);
+            formData.set("checkNo", checkNo);
             formData.append("action", "save_check");
 
             fetch("Controllers/CheckController.php", {
-                    method: "POST",
-                    body: formData
-                })
-                .then(res => res.text())
-                .then(resp => {
+                method: "POST",
+                body: formData
+            })
+            .then(res => res.text())
+            .then(resp => {
+                if (resp.trim() === "success") {
+                    Swal.fire({
+                        icon: "success",
+                        title: "Saved!",
+                        text: "Check record saved successfully."
+                    }).then(() => location.reload());
+                } else {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: "Failed to save check record."
+                    });
+                }
+            });
+        });
+    </script>
 
-                    if (resp.trim() === "success") {
-                        Swal.fire({
-                            icon: "success",
-                            title: "Saved!",
-                            text: "Check record saved successfully."
-                        }).then(() => location.reload());
-                    } else {
-                        Swal.fire({
-                            icon: "error",
-                            title: "Error",
-                            text: "Failed to save check record."
-                        });
+    <script>
+                document.addEventListener("DOMContentLoaded", () => {
+            const checkNo = document.getElementById("checkNo");
+
+            // Initial value
+            checkNo.value = "00000000";
+
+            checkNo.addEventListener("input", () => {
+                let digits = checkNo.value.replace(/\D/g, "");
+                digits = digits.slice(-8);
+                checkNo.value = digits.padStart(8, "0");
+
+                // Cursor fix (SAFE)
+                requestAnimationFrame(() => {
+                    if (document.activeElement === checkNo) {
+                        checkNo.setSelectionRange(checkNo.value.length, checkNo.value.length);
                     }
                 });
+            });
+
+            checkNo.addEventListener("focus", () => {
+                requestAnimationFrame(() => {
+                    checkNo.setSelectionRange(checkNo.value.length, checkNo.value.length);
+                });
+            });
         });
     </script>
 

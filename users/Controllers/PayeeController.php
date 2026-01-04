@@ -1,6 +1,7 @@
 <?php
 session_start();
 include '../../db.php';
+date_default_timezone_set('Asia/Manila');
 
 $action = $_GET['action'] ?? '';
 

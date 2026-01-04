@@ -35,6 +35,27 @@ if ($result->num_rows > 0) {
 date_default_timezone_set('Asia/Manila');
 $currentDate = date("M d, Y");
 
+$indorseCount = 0;
+
+$indorseStmt = $conn->prepare("
+    SELECT COUNT(*) AS total 
+    FROM communications 
+    WHERE indorse_to = ?
+");
+$indorseStmt->bind_param("s", $full_name);
+$indorseStmt->execute();
+$indorseCount = $indorseStmt->get_result()->fetch_assoc()['total'] ?? 0;
+
+// Fetch indorsed records for this user
+$indorsedRecordsQuery = $conn->prepare("
+    SELECT * FROM communications
+    WHERE indorse_to = ?
+    ORDER BY date_routed DESC
+");
+$indorsedRecordsQuery->bind_param("s", $full_name);
+$indorsedRecordsQuery->execute();
+$indorsedRecords = $indorsedRecordsQuery->get_result();
+
 // Decode permissions JSON into array
 $user_permissions = [];
 if (!empty($user['permissions'])) {
@@ -87,7 +108,26 @@ if ($comResult->num_rows > 0) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/users/communication.css">
     <style>
+        .indorse-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: #dc3545;
+            /* red */
+            color: #fff;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 50%;
+            min-width: 20px;
+            text-align: center;
+            line-height: 16px;
+        }
 
+        .out-disabled {
+            background: #e9ecef !important;
+            cursor: not-allowed !important;
+        }
     </style>
 </head>
 
@@ -95,12 +135,13 @@ if ($comResult->num_rows > 0) {
 
     <!-- HEADER -->
     <div class="header">
-    <?php
-$ws = $conn->query("SELECT logo FROM website_settings WHERE id=1")->fetch_assoc();
-$site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
-?>
-<img src="../<?= $site_logo ?>" 
-     alt="Website Logo" class="logo" >          <h1>Document Records Management System</h1>
+        <?php
+        $ws = $conn->query("SELECT logo FROM website_settings WHERE id=1")->fetch_assoc();
+        $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
+        ?>
+        <img src="../<?= $site_logo ?>"
+            alt="Website Logo" class="logo">
+        <h1>Document Records Management System</h1>
 
         <div class="header-right">
             <div class="header-user">
@@ -136,9 +177,24 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
                             Communication Records
                         </div>
                         <div class="right">
-                            <div class="search-container">
-                                <input type="text" id="tableSearch" placeholder="Search records..." />
-                                <button id="searchBtn"><i class="bi bi-search"></i></button>
+                            <div class="tools-column">
+                                <div class="search-container">
+                                    <input type="text" id="tableSearch" placeholder="Search records..." />
+                                    <button id="searchBtn">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                </div>
+
+                                <button id="showIndorseBtn" class="btn-indorse position-relative">
+                                    <i class="bi bi-send-check"></i>
+                                    <span>Show Indorsed</span>
+
+                                    <?php if ($indorseCount > 0): ?>
+                                        <span class="indorse-badge">
+                                            <?= $indorseCount ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -159,28 +215,29 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
                         </div>
 
                         <!-- Table -->
-                        <form method="POST" action="Controllers/CommunicationController.php">
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle" id="recordsTable">
-                                    <thead>
-                                        <tr>
-                                            <th class="checkbox-cell"><input type="checkbox" id="selectAll"></th>
-                                            <th>ComID</th>
-                                            <th>Date Received</th>
-                                            <th>Sender</th>
-                                            <th>Description</th>
-                                            <th>Indorse To</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php
-                                        include '../db.php';
-                                        $records = $conn->query("SELECT * FROM communications");
+                        <div id="mainTableContainer">
+                            <form method="POST" action="Controllers/CommunicationController.php">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle" id="recordsTable">
+                                        <thead>
+                                            <tr>
+                                                <th class="checkbox-cell"><input type="checkbox" id="selectAll"></th>
+                                                <th>ComID</th>
+                                                <th>Date Received</th>
+                                                <th>Sender</th>
+                                                <th>Description</th>
+                                                <th>Indorse To</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php
+                                            include '../db.php';
+                                            $records = $conn->query("SELECT * FROM communications");
 
-                                        if ($records->num_rows > 0) {
-                                            while ($row = $records->fetch_assoc()) {
-                                                $data = htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8');
-                                                echo "<tr class='text-center' data-row='{$data}'>
+                                            if ($records->num_rows > 0) {
+                                                while ($row = $records->fetch_assoc()) {
+                                                    $data = htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8');
+                                                    echo "<tr class='text-center' data-row='{$data}'>
                                                 <td><input type='checkbox' class='rowCheckbox' name='delete_ids[]' value='{$row['id']}'></td>
                                                 <td>{$row['com_id']}</td>
                                                 <td>" . date("M d, Y", strtotime($row['date_received'])) . "</td>
@@ -188,28 +245,72 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
                                                 <td>{$row['description']}</td>
                                                 <td>{$row['indorse_to']}</td>
                                             </tr>";
-                                            }
-                                        } else {
-                                            echo "<tr>
+                                                }
+                                            } else {
+                                                echo "<tr>
                                             <td colspan='6' class='no-records'>
                                             <i class='bi bi-inbox'></i>
                                             <div>No records found</div>
                                             </td>
                                         </tr>";
-                                        }
-                                        ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </form>
+                                            }
+                                            ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </form>
+                        </div>
+                        <!-- SHOW INDORSED TABLE  -->
+                        <div id="indorsedTableContainer" style="display: none;">
+                            <table class="table table-hover align-middle text-center">
+                                <thead>
+                                    <tr>
+                                        <th class="checkbox-cell"><input type="checkbox" id="selectAll"></th>
+                                        <th>ComID</th>
+                                        <th>Indorse To</th>
+                                        <th>Date Routed</th>
+                                        <th>Routed By</th>
+                                        <th>Action</th>
+                                        <th>Remarks</th>
+                                        <th>Action Duration</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if ($indorsedRecords->num_rows > 0): ?>
+                                        <?php while ($row = $indorsedRecords->fetch_assoc()): ?>
+                                            <tr class="text-center" data-row='<?= htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8') ?>'>
+                                                <td><input type='checkbox' class='rowCheckbox' name='delete_ids[]' value='<?= $row['id'] ?>'></td>
+                                                <td><?= htmlspecialchars($row['com_id']) ?></td>
+                                                <td><?= htmlspecialchars($row['indorse_to']) ?></td>
+                                                <td><?= htmlspecialchars($row['date_routed'] ?: '-') ?></td>
+                                                <td><?= htmlspecialchars($row['routed_by'] ?: '-') ?></td>
+                                                <td><?= htmlspecialchars($row['action_taken'] ?: '-') ?></td>
+                                                <td><?= htmlspecialchars($row['remarks'] ?: '-') ?></td>
+                                                <td><?= htmlspecialchars($row['action_duration'] ?: '-') ?></td>
+                                            </tr>
+                                        <?php endwhile; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted">
+                                                <i class="bi bi-inbox"></i> No indorsed records found
+                                            </td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
+
                 </div>
             </div>
+
+
 
             <!-- RIGHT SIDE: Forms -->
             <div class="col-lg-4 right-panel">
                 <form method="POST" action="Controllers/CommunicationController.php">
                     <input type="hidden" name="id" id="id">
+                    <input type="hidden" name="is_from_indorsed" id="is_from_indorsed" value="0">
 
                     <!-- IN Form -->
                     <div class="card form-section">
@@ -287,10 +388,12 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
                                 <button type="submit" name="save_edit" class="btn btn-custom" <?= !$canAccessCommunication ? 'disabled style="background:darkblue;color:#ffffff;opacity:0.8;cursor:not-allowed;"' : '' ?>>
                                     <i class="bi bi-pencil-square"></i> Save Edit
                                 </button>
-                                <!-- <button type="button" id="deleteBtn" class="btn btn-danger" <?= !$canAccessCommunication ? 'disabled style="background:red;color:#ffffff;opacity:0.8;cursor:not-allowed;"' : '' ?>>
-                                <i class="bi bi-trash"></i> Delete
-                            </button> -->
-                                <button onclick="window.location.href='../index.php'" type="button" class="btn btn-secondary" style="grid-column: 1 / -1;">
+
+                                <button type="button" onclick="deleteSelected()" class="btn btn-danger" <?= !$canAccessCommunication ? 'disabled style="background:red;color:#ffffff;opacity:0.8;cursor:not-allowed;"' : '' ?>>
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+
+                                <button onclick="window.location.href='../index.php'" type="button" class="btn btn-secondary">
                                     <i class="bi bi-x-circle"></i> Close
                                 </button>
                             </div>
@@ -304,8 +407,8 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
     <script src="../assets/js/users/communication.js"></script>
     <script src="../date.js"></script>
     <script>
-    const siteLogo = "<?= $site_logo ?>";
-</script>
+        const siteLogo = "<?= $site_logo ?>";
+    </script>
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -394,7 +497,7 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
                 if (!checkbox) return;
 
                 row.addEventListener("click", function(e) {
-                    // Ignore clicks directly on checkbox to prevent double toggling
+
                     if (e.target.type === "checkbox") return;
                     checkbox.checked = !checkbox.checked;
                 });
@@ -411,9 +514,8 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
         });
     </script>
 
-
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener("DOMContentLoaded", () => {
             // ✅ Success alerts
             <?php if (isset($_SESSION['save_success'])): ?>
                 Swal.fire({
@@ -445,36 +547,114 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
                 <?php unset($_SESSION['delete_error']); ?>
             <?php endif; ?>
 
+            // ---------------------------
+            // Function to setup table checkboxes + row click selection
+            // ---------------------------
+            function setupTable(tableId) {
+                const table = document.getElementById(tableId);
+                if (!table) return;
 
-            // ✅ Handle row selection
-            const rows = document.querySelectorAll('#recordsTable tbody tr');
-            const comIdLabel = document.querySelector('.card-body label[href=""]');
-            let selectedId = null;
+                const selectAll = table.querySelector("thead input[type='checkbox']");
+                const rows = Array.from(table.querySelectorAll("tbody tr"))
+                    .filter(row => !row.classList.contains("no-records"));
 
-            rows.forEach(row => {
-                row.addEventListener('click', () => {
-                    rows.forEach(r => r.classList.remove('selected'));
-                    row.classList.add('selected');
+                // Helper: update select-all checkbox
+                function updateSelectAll() {
+                    if (!selectAll) return;
+                    const allChecked = rows.every(r => r.querySelector(".rowCheckbox")?.checked);
+                    selectAll.checked = allChecked;
+                }
 
-                    const data = JSON.parse(row.dataset.row);
-                    selectedId = data.id;
+                // Row click + checkbox logic
+                rows.forEach(row => {
+                    const cb = row.querySelector(".rowCheckbox");
 
-                    document.getElementById('id').value = data.id;
-                    document.getElementById('com_id').value = data.com_id;
-                    document.getElementById('date_received').value = data.date_received;
-                    document.getElementById('sender').value = data.sender;
-                    document.getElementById('description').value = data.description;
-                    document.getElementById('indorse_to').value = data.indorse_to || '';
-                    document.getElementById('date_routed').value = data.date_routed || '';
-                    document.getElementById('routed_by').value = data.routed_by || '';
-                    document.getElementById('action').value = data.action_taken || '';
-                    document.getElementById('remarks').value = data.remarks || '';
+                    // Row click
+                    row.addEventListener("click", e => {
+                        if (e.target.type === "checkbox") return;
+                        if (cb) cb.checked = !cb.checked;
+                        updateSelectAll();
 
-                    // ✅ Show selected ComID in OUT Form
-                    comIdLabel.textContent = 'ComID: ' + data.com_id;
+                        if (row.dataset.row) {
+                            const data = JSON.parse(row.dataset.row);
+                            const comIdLabel = document.querySelector('.card-body label[href=""]');
+
+                            document.getElementById("id").value = data.id || '';
+                            document.getElementById("com_id").value = data.com_id || '';
+                            document.getElementById("date_received").value = data.date_received || '';
+                            document.getElementById("sender").value = data.sender || '';
+                            document.getElementById("description").value = data.description || '';
+                            document.getElementById("indorse_to").value = data.indorse_to || '';
+                            document.getElementById("date_routed").value = data.date_routed || '';
+                            document.getElementById("routed_by").value = data.routed_by || '';
+                            document.getElementById("action").value = data.action_taken || '';
+                            document.getElementById("remarks").value = data.remarks || '';
+
+                            // Highlight selected row
+                            rows.forEach(r => r.classList.remove("selected"));
+                            row.classList.add("selected");
+
+                            if (comIdLabel) comIdLabel.textContent = 'ComID: ' + (data.com_id || '');
+                        }
+                    });
+
+                    if (cb) {
+                        cb.addEventListener("change", updateSelectAll);
+                    }
                 });
-            });
+
+                // Select/unselect all checkboxes
+                if (selectAll) {
+                    selectAll.addEventListener("change", () => {
+                        rows.forEach(r => {
+                            const cb = r.querySelector(".rowCheckbox");
+                            if (cb) cb.checked = selectAll.checked;
+                        });
+                    });
+                }
+            }
+
+            // Apply to both tables
+            setupTable("recordsTable");
+            setupTable("indorsedTableContainer");
         });
+    </script>
+
+    <script>
+        function deleteSelected() {
+            const selectedCheckboxes = document.querySelectorAll(".rowCheckbox:checked");
+            if (selectedCheckboxes.length === 0) {
+                Swal.fire("No record selected", "Please select at least one row to delete.", "info");
+                return;
+            }
+
+            let ids = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+            Swal.fire({
+                title: 'Confirm Delete',
+                text: 'Are you sure you want to delete the selected record(s)?',
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, delete",
+                cancelButtonText: "Cancel",
+                confirmButtonColor: "#d33"
+            }).then(result => {
+                if (result.isConfirmed) {
+                    // Create a FormData to send array properly
+                    const formData = new FormData();
+                    formData.append('delete_selected', 1);
+                    ids.forEach(id => formData.append('delete_ids[]', id));
+
+                    fetch("Controllers/CommunicationController.php", {
+                            method: "POST",
+                            body: formData
+                        })
+                        .then(res => res.text())
+                        .then(() => location.reload())
+                        .catch(() => Swal.fire("Error", "Request failed.", "error"));
+                }
+            });
+        }
     </script>
 
     <script>
@@ -528,6 +708,58 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
     </script>
 
     <script>
+        function attachCheckboxAndRowLogic() {
+            const rows = document.querySelectorAll("#recordsTable tbody tr");
+            const selectAll = document.getElementById("selectAll");
+
+            // Select All
+            if (selectAll) {
+                selectAll.addEventListener("change", function() {
+                    rows.forEach(r => {
+                        const cb = r.querySelector(".rowCheckbox");
+                        if (cb) cb.checked = this.checked;
+                    });
+                });
+            }
+
+            rows.forEach(row => {
+                const cb = row.querySelector(".rowCheckbox");
+
+                row.addEventListener("click", function(e) {
+                    if (e.target.type === "checkbox") return;
+
+                    if (cb) cb.checked = !cb.checked;
+
+                    rows.forEach(r => r.classList.remove("selected"));
+                    row.classList.add("selected");
+
+                    // Fill OUT Form
+                    let data = {};
+                    if (row.dataset.row) {
+                        try {
+                            data = JSON.parse(row.dataset.row);
+                        } catch (err) {}
+                    }
+
+                    document.getElementById("id").value = data.id || '';
+                    document.getElementById("com_id").value = data.com_id || '';
+                    document.getElementById("date_received").value = data.date_received || '';
+                    document.getElementById("sender").value = data.sender || '';
+                    document.getElementById("description").value = data.description || '';
+                    document.getElementById("indorse_to").value = data.indorse_to || '';
+                    document.getElementById("date_routed").value = data.date_routed || '';
+                    document.getElementById("routed_by").value = data.routed_by || '';
+                    document.getElementById("action").value = data.action_taken || '';
+                    document.getElementById("remarks").value = data.remarks || '';
+                });
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", attachCheckboxAndRowLogic);
+    </script>
+
+
+    <script>
         // Select all checkboxes
         document.getElementById('selectAll').addEventListener('change', function() {
             document.querySelectorAll('.rowCheckbox').forEach(cb => cb.checked = this.checked);
@@ -555,6 +787,53 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
                 document.getElementById('remarks').value = data.remarks;
             });
         });
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const indorsedRows = document.querySelectorAll("#indorsedTableContainer tbody tr");
+            const comIdLabel = document.querySelector('.card-body label[href=""]');
+
+            indorsedRows.forEach(row => {
+                row.addEventListener("click", (e) => {
+                    // Ignore clicks on checkbox
+                    if (e.target.type === "checkbox") return;
+
+                    // Remove previous selection
+                    document.querySelectorAll("#indorsedTableContainer tbody tr").forEach(r => r.classList.remove("selected"));
+                    row.classList.add("selected");
+
+                    // Parse row data
+                    if (!row.dataset.row) return;
+                    const data = JSON.parse(row.dataset.row);
+
+                    // Fill IN Form
+                    document.getElementById("id").value = data.id || '';
+                    document.getElementById("com_id").value = data.com_id || '';
+                    document.getElementById("date_received").value = data.date_received || '';
+                    document.getElementById("sender").value = data.sender || '';
+                    document.getElementById("description").value = data.description || '';
+
+                    // Fill OUT Form
+                    document.getElementById("indorse_to").value = data.indorse_to || '';
+                    document.getElementById("date_routed").value = data.date_routed || '';
+                    document.getElementById("routed_by").value = data.routed_by || '';
+                    document.getElementById("action").value = data.action_taken || '';
+                    document.getElementById("remarks").value = data.remarks || '';
+
+                    // Show ComID on OUT form
+                    comIdLabel.textContent = 'ComID: ' + (data.com_id || '');
+                });
+            });
+        });
+
+        const indorseSelectAll = document.querySelector("#indorsedTableContainer #selectAll");
+        if (indorseSelectAll) {
+            indorseSelectAll.addEventListener("change", function() {
+                indorsedRows.forEach(row => {
+                    const cb = row.querySelector(".rowCheckbox");
+                    if (cb) cb.checked = this.checked;
+                });
+            });
+        }
     </script>
 
     <script>
@@ -606,6 +885,73 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
             const indorseInput = document.getElementById("indorse_to");
             const indorseSuggestions = document.getElementById("indorseToSuggestions");
 
+            const remarksInput = document.getElementById("remarks");
+            const showIndorseBtn = document.getElementById("showIndorseBtn");
+            const mainTable = document.getElementById("mainTableContainer");
+            const indorsedTable = document.getElementById("indorsedTableContainer");
+            const isFromIndorsedInput = document.getElementById("is_from_indorsed"); // Get the hidden input
+
+            // Track current mode
+            let isIndorseMode = false;
+
+            // Function to enable OUT form editing (for Show Indorsed mode)
+            function enableOutForm() {
+                [routedByInput, actionInput, remarksInput].forEach(input => {
+                    input.removeAttribute("readonly");
+                    input.style.backgroundColor = "#fff";
+                    input.style.cursor = "text";
+                    input.style.opacity = "1";
+                    input.style.pointerEvents = "auto";
+                    input.classList.remove("out-disabled");
+                });
+
+                // Update hidden input
+                if (isFromIndorsedInput) {
+                    isFromIndorsedInput.value = "1";
+                }
+            }
+
+            // Function to disable OUT form editing (for Main Table mode)
+            function disableOutForm() {
+                [routedByInput, actionInput, remarksInput].forEach(input => {
+                    input.setAttribute("readonly", "readonly");
+                    input.style.backgroundColor = "#e9ecef";
+                    input.style.cursor = "not-allowed";
+                    input.style.opacity = "0.7";
+                    input.style.pointerEvents = "none";
+                    input.classList.add("out-disabled");
+                });
+
+                // Update hidden input
+                if (isFromIndorsedInput) {
+                    isFromIndorsedInput.value = "0";
+                }
+            }
+
+            // Initialize as disabled (Main Table mode)
+            disableOutForm();
+
+            showIndorseBtn.addEventListener("click", () => {
+                const isHidden = indorsedTable.style.display === "none";
+
+                if (isHidden) {
+                    // Switch to Show Indorsed mode
+                    mainTable.style.display = "none";
+                    indorsedTable.style.display = "block";
+                    showIndorseBtn.innerHTML = `<i class="bi bi-arrow-left"></i> <span>Go Back</span>`;
+                    isIndorseMode = true;
+                    enableOutForm(); // Enable editing
+
+                } else {
+                    // Switch back to Main Table mode
+                    mainTable.style.display = "block";
+                    indorsedTable.style.display = "none";
+                    showIndorseBtn.innerHTML = `<i class="bi bi-send-check"></i> <span>Show Indorsed</span>`;
+                    isIndorseMode = false;
+                    disableOutForm(); // Disable editing
+                }
+            });
+
             // Fetch DISTINCT values from DB
             const routedByList = [
                 <?php
@@ -642,10 +988,15 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
 
             const indorseToList = [
                 <?php
-                $res = $conn->query("SELECT DISTINCT indorse_to FROM communications WHERE indorse_to IS NOT NULL ORDER BY indorse_to ASC");
+                $res = $conn->query("SELECT first_name, middle_initial, last_name FROM users WHERE role != 'admin' ORDER BY first_name ASC");
                 $arr = [];
                 while ($row = $res->fetch_assoc()) {
-                    $arr[] = '"' . addslashes($row['indorse_to']) . '"';
+                    $full_name = trim(
+                        $row['first_name'] . ' ' .
+                            (!empty($row['middle_initial']) ? strtoupper(substr($row['middle_initial'], 0, 1)) . '. ' : '') .
+                            $row['last_name']
+                    );
+                    $arr[] = '"' . addslashes($full_name) . '"';
                 }
                 echo implode(',', $arr);
                 ?>
@@ -654,11 +1005,18 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
             // Reusable Autocomplete Function
             function setupAutocomplete(input, suggestions, list) {
                 function show(filtered) {
+                    // Hide suggestions if field is disabled AND not in Indorse mode
+                    if (!isIndorseMode && (input.id === "routed_by" || input.id === "action")) {
+                        suggestions.style.display = 'none';
+                        return;
+                    }
+
                     suggestions.innerHTML = '';
                     if (filtered.length === 0) {
                         suggestions.style.display = 'none';
                         return;
                     }
+
                     filtered.forEach(item => {
                         const div = document.createElement('div');
                         div.textContent = item;
@@ -672,13 +1030,26 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
                 }
 
                 function filterAndShow() {
+                    // Don't show suggestions if field is disabled AND not in Indorse mode
+                    if (!isIndorseMode && (input.id === "routed_by" || input.id === "action")) {
+                        suggestions.style.display = 'none';
+                        return;
+                    }
+
                     const value = input.value.toLowerCase().trim();
                     const filtered = list.filter(d => d.toLowerCase().includes(value));
                     show(filtered);
                 }
 
                 input.addEventListener('input', filterAndShow);
-                input.addEventListener('focus', filterAndShow);
+
+                input.addEventListener('focus', function() {
+                    // Only show on focus if in Indorse mode for routed_by and action fields
+                    if (!isIndorseMode && (input.id === "routed_by" || input.id === "action")) {
+                        return;
+                    }
+                    filterAndShow();
+                });
 
                 document.addEventListener('click', e => {
                     if (!input.contains(e.target) && !suggestions.contains(e.target)) {
@@ -687,11 +1058,34 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
                 });
             }
 
+            document.addEventListener("click", function(e) {
+                if (e.target.closest("#indorsedTableContainer tbody tr")) {
+                    if (isFromIndorsedInput) {
+                        isFromIndorsedInput.value = "1";
+                    }
+                }
+
+                if (e.target.closest("#recordsTable tbody tr")) {
+                    if (isFromIndorsedInput) {
+                        isFromIndorsedInput.value = "0";
+                    }
+                }
+            });
+
             // Apply Autocomplete
             setupAutocomplete(routedByInput, routedBySuggestions, routedByList);
             setupAutocomplete(actionInput, actionSuggestions, actionList);
             setupAutocomplete(senderInput, senderSuggestions, senderList);
             setupAutocomplete(indorseInput, indorseSuggestions, indorseToList);
+
+            // Update the autocomplete behavior when mode changes
+            const originalBtnClick = showIndorseBtn.onclick;
+            showIndorseBtn.addEventListener("click", function() {
+                // Clear any open suggestions when switching modes
+                [routedBySuggestions, actionSuggestions, senderSuggestions, indorseSuggestions].forEach(suggestions => {
+                    if (suggestions) suggestions.style.display = 'none';
+                });
+            });
         });
     </script>
 
@@ -719,6 +1113,41 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
                 filterTable();
             }
         });
+    </script>
+
+    <script>
+        let isIndorseMode = false;
+
+        const LOCK_FIELDS = ["routed_by", "action", "remarks"];
+
+        function applyOutFormMode() {
+            LOCK_FIELDS.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+
+                if (isIndorseMode) {
+                    el.removeAttribute("readonly");
+                    el.classList.remove("out-disabled");
+                    el.style.pointerEvents = "auto";
+                } else {
+                    el.setAttribute("readonly", true);
+                    el.classList.add("out-disabled");
+                    el.style.pointerEvents = "none";
+                }
+            });
+        }
+
+        function enterNormalMode() {
+            isIndorseMode = false;
+            applyOutFormMode();
+        }
+
+        function enterIndorseMode() {
+            isIndorseMode = true;
+            applyOutFormMode();
+        }
+
+        document.addEventListener("DOMContentLoaded", enterNormalMode);
     </script>
 </body>
 

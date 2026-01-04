@@ -183,6 +183,10 @@ transition: all 0.2s ease;
     padding: 14px 1.5rem !important;
 }
 
+.right {
+    width: 500px;
+}
+
 .ok-card .right i{
     color: #ffffff;
 }
@@ -271,7 +275,7 @@ textarea.form-control {
 .form-buttons {
     margin-top: 1.25rem;
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0.75rem;
     justify-content: center;
 }
@@ -477,6 +481,54 @@ input[type="checkbox"] {
 .search-container button i {
     pointer-events: none;
 }
+
+.tools-column {
+    display: flex;
+    gap: 8px;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+}
+
+.btn-indorse {
+    background: darkblue;
+    color: #ffffff;
+    border: none;
+    border-radius: 30px;
+    padding: 8px 14px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+
+.btn-indorse i {
+    font-size: 0.95rem;
+}
+
+/* Hover effect */
+.btn-indorse:hover {
+    background: #1e3a8a;
+}
+
+/* Active / toggled state */
+.btn-indorse.active {
+    background: #065f46;
+}
+
+/* Mobile-friendly */
+@media (max-width: 768px) {
+    .tools-column {
+        width: 100%;
+    }
+}
+
 
 .suggestions-dropdown {
     position: absolute;

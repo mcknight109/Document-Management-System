@@ -112,7 +112,7 @@ async function printSelectedTransmittal() {
         <head>
             <title>Transmittal Print</title>
             <style>
-                @page { size: A4; margin: 10mm; }
+                @page { size: A4 landscape; margin: 10mm; }
                 body { 
                     font-family: serif; 
                     font-size: 13px; 

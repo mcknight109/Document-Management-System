@@ -28,16 +28,16 @@ function logUserActivity($conn, $user_id, $full_name, $action, $module, $referen
     $stmt->close();
 }
 
-// Decode incoming JSON
-$data = json_decode(file_get_contents("php://input"), true);
-$action = $data['action'] ?? null;
-$response = ["success" => false];
+    // Decode incoming JSON
+    $data = json_decode(file_get_contents("php://input"), true);
+    $action = $data['action'] ?? null;
+    $response = ["success" => false];
 
-// ===== HANDLE ACTIONS =====
-switch ($action) {
+    // ===== HANDLE ACTIONS =====
+    switch ($action) {
 
-    // SAVE new voucher
-    case "save":
+        // SAVE new voucher
+        case "save":
         $control = $data['control_no'] ?? null;
         $payee = $data['payee'] ?? null;
         $desc = $data['description'] ?? null;
@@ -58,7 +58,7 @@ switch ($action) {
         $stmt->bind_param("issssds", $user_id, $control, $payee, $desc, $fundType, $amount, $dateIn);
 
         if ($stmt->execute()) {
-            // Log activity
+            // Log activity (use $control directly)
             logUserActivity(
                 $conn,
                 $user_id,
@@ -67,7 +67,7 @@ switch ($action) {
                 "Document Voucher Records",
                 $conn->insert_id,
                 $control,
-                "Document Voucher record added, Control No" . $doc['control_no']
+                "Document Voucher record added, Control No: " . $control
             );
             $response = ["success" => true];
         } else {
@@ -117,6 +117,41 @@ switch ($action) {
     default:
         $response = ["success" => false, "error" => "Invalid action"];
         break;
+
+        case "delete":
+        $ids = $data['ids'] ?? [];
+        if (empty($ids)) {
+            echo json_encode(["success" => false, "error" => "No IDs provided"]);
+            exit;
+        }
+
+        $idList = implode(",", array_map('intval', $ids));
+
+        // Fetch records for logging before deletion
+        $res = $conn->query("SELECT * FROM documents WHERE id IN ($idList)");
+        $documents = [];
+        while ($row = $res->fetch_assoc()) {
+            $documents[] = $row;
+        }
+
+        if ($conn->query("DELETE FROM documents WHERE id IN ($idList)")) {
+            foreach ($documents as $doc) {
+                logUserActivity(
+                    $conn,
+                    $user_id,
+                    $full_name,
+                    "Deleted Voucher Record",
+                    "Document Voucher Records",
+                    $doc['id'],
+                    $doc['control_no'],
+                    "Deleted Voucher Record, Control No: " . $doc['control_no']
+                );
+            }
+            $response = ["success" => true];
+        } else {
+            $response = ["success" => false, "error" => $conn->error];
+        }
+    break;
 }
 
 $conn->close();

@@ -1,6 +1,7 @@
 <?php
 include '../../db.php';
 session_start();
+date_default_timezone_set('Asia/Manila');
 
 if (isset($_POST['update_profile'])) {
     $user_id = $_POST['user_id'];

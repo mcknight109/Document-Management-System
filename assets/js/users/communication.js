@@ -15,6 +15,9 @@ function printSlip() {
     const date_received = document.getElementById("date_received").value;
     const sender = document.getElementById("sender").value;
     const description = document.getElementById("description").value;
+    const indorse_to = document.getElementById("indorse_to").value;
+    const action = document.getElementById("action").value;
+    const remarks = document.getElementById("remarks").value;
 
     if (!com_id || !date_received || !sender || !description) {
         Swal.fire("Missing Information", "Please select or fill out an IN Form first.", "warning");
@@ -27,6 +30,57 @@ function printSlip() {
         year: "numeric"
     });
 
+    // Define all possible indorse options
+    const indorseOptions = [
+        "ADMIN DIVISION",
+        "LANDTAX DIVISION",
+        "LICENSE DIVISION",
+        "CASH DIVISION",
+        "TORU DIVISION",
+        "RECORDS SECTION",
+        "BUS. TAX MAPPING SECTION",
+        "GRACE ATTY. TERENCE"
+    ];
+
+    // Define all possible action options
+    const actionOptions = [
+        "U-R-G-E-N-T",
+        "APPROPRIATE ACTION",
+        "COMMENT/S AND/OR",
+        "REPRESENT THIS OFFICE",
+        "TAKE UP WITH ME",
+        "FURNISH COPY",
+        "FILE"
+    ];
+
+    // Generate indorse section with checkboxes
+    let indorseSectionHTML = "";
+    indorseOptions.forEach(option => {
+        // Check if this option matches the indorse_to value (case-insensitive)
+        const isChecked = indorse_to && option.toLowerCase().includes(indorse_to.toLowerCase()) ? "✓" : "□";
+        indorseSectionHTML += `${isChecked} ${option}<br>`;
+    });
+
+    // Generate action section with checkboxes
+    let actionSectionHTML = "";
+    actionOptions.forEach(option => {
+        // Check if this option matches the action value (case-insensitive)
+        const isChecked = action && option.toLowerCase().includes(action.toLowerCase()) ? "✓" : "□";
+        actionSectionHTML += `${isChecked} ${option}<br>`;
+    });
+
+    // Format remarks - put text above the lines
+    let remarksHTML = "";
+    if (remarks && remarks.trim() !== "") {
+        // Split remarks by lines and create underlined format
+        const remarksLines = remarks.split('\n');
+        remarksLines.forEach(line => {
+            if (line.trim() !== "") {
+                remarksHTML += `<div style="margin-bottom: 5px;">${line}</div>`;
+            }
+        });
+    }
+
     const printContent = `
     <html>
     <head>
@@ -36,7 +90,7 @@ function printSlip() {
             body { font-family: Arial, sans-serif; font-size: 12px; }
 
             .page {
-                width: 50%;
+                width: 45%;
                 border: 1px solid black;
                 padding: 10px;
                 box-sizing: border-box;
@@ -87,9 +141,22 @@ function printSlip() {
 
             .remarks-box {
                 margin-top: 15px;
-                height: 120px;
-                font-size: 12x;
+                font-size: 12px;
                 text-align: left;
+                min-height: 120px;
+                padding: 5px;
+            }
+
+            .remarks-text {
+                margin-top: 20px;
+                line-height: 1.4;
+                text-align: center;
+            }
+
+            .underline-line {
+                border-bottom: 1px solid black;
+                margin-bottom: 5px;
+                height: 18px;
             }
 
             .sign {
@@ -102,6 +169,15 @@ function printSlip() {
                 margin-top: 20px;
                 text-align: left;
                 font-size: 10px;
+            }
+            
+            .checkbox-item {
+                font-size: 8px;
+                line-height: 1.4;
+            }
+            
+            .checked-box {
+                font-weight: bold;
             }
         </style>
     </head>
@@ -128,35 +204,24 @@ function printSlip() {
             <div class="to-section">
                 <div>
                     <strong style="font-style: italic;">INDORSE TO:</strong><br>
-                    ⬜ADMIN DIVISION<br>
-                    ⬜LANDTAX DIVISION<br>
-                    ⬜LICENSE DIVISION<br>
-                    ⬜CASH DIVISION<br>
-                    ⬜TORU DIVISION<br>
-                    ⬜RECORDS SECTION<br>
-                    ⬜BUS. TAX MAPPING SECTION<br>
-                    ⬜GRACE ATTY. TERENCE<br>
+                    <div class="checkbox-item">
+                        ${indorseSectionHTML}
+                    </div>
                 </div>
 
                 <div>
                     <strong style="font-style: italic;">ACTION:</strong><br>
-                    ⬜U-R-G-E-N-T<br>
-                    ⬜APPROPRIATE ACTION<br>
-                    ⬜COMMENT/SAND/OR<br>
-                    ⬜REPRESENT THIS OFFICE<br>
-                    ⬜TAKE UP WITH ME<br>
-                    ⬜FURNISH COPY<br>
-                    ⬜FILE<br>
+                    <div class="checkbox-item">
+                        ${actionSectionHTML}
+                    </div>
                 </div>
             </div>
 
             <div class="remarks-box">
-                <span style="font-style: italic;">REMARKS:</span><br><br>
-                _________________________________________________<br>
-                _________________________________________________<br>
-                _________________________________________________<br>
-                _________________________________________________<br>
-                _________________________________________________
+                <span style="font-style: italic;">REMARKS:</span><br>
+                <div class="remarks-text">
+                    ${remarksHTML}
+                </div>
             </div>
 
             <div class="sign">
@@ -165,7 +230,7 @@ function printSlip() {
                 <span style="font-size: 10px;">Acting City Treasurer</span>
             </div>
 
-            <div class="footer">2025</div>
+            <div class="footer">${com_id}</div>
         </div>
     </body>
     </html>

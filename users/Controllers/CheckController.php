@@ -46,12 +46,48 @@ if (isset($_GET['action']) && $_GET['action'] === 'getdoc' && isset($_GET['id'])
     exit;
 }
 
+// --- GET CHECK PRINT DATA ---
+if (isset($_GET['action']) && $_GET['action'] === 'get_check_print' && isset($_GET['id'])) {
+    $id = intval($_GET['id']);
+
+    $stmt = $conn->prepare("
+        SELECT 
+            control_no,
+            payee,
+            description,
+            amount,
+            fund_type,
+            bank_channel,
+            check_date,
+            date_out,
+            status
+        FROM documents
+        WHERE id = ?
+        LIMIT 1
+    ");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    echo json_encode($stmt->get_result()->fetch_assoc());
+    exit;
+}
+
 // --- SAVE CHECK RECORD ---
 if (isset($_POST['action']) && $_POST['action'] === 'save_check') {
     $docId = intval($_POST['docId']);
-    $checkNo = $_POST['checkNo'];
+    $checkNo = trim($_POST['checkNo'] ?? '');
     $checkDate = !empty($_POST['checkDate']) ? $_POST['checkDate'] : NULL;
     $bankChannel = $_POST['bankChannel'];
+
+    // If empty, force 8 zeros
+    if ($checkNo === '') {
+        $checkNo = '00000000';
+    }
+
+    // Must be exactly 8 digits
+    if (!preg_match('/^\d{8}$/', $checkNo)) {
+        echo "invalid_check_no";
+        exit;
+    }
 
     $stmt = $conn->prepare("
         UPDATE documents 
@@ -75,6 +111,44 @@ if (isset($_POST['action']) && $_POST['action'] === 'save_check') {
         echo "success";
     } else {
         echo "error";
+    }
+    exit;
+}
+
+$input = json_decode(file_get_contents("php://input"), true);
+
+if (isset($input['action']) && $input['action'] === 'delete') {
+    $ids = $input['ids'] ?? [];
+    if (empty($ids)) {
+        echo json_encode(["success" => false, "error" => "No IDs provided"]);
+        exit;
+    }
+
+    $idList = implode(",", array_map('intval', $ids));
+
+    // Fetch records for logging before deletion
+    $res = $conn->query("SELECT * FROM documents WHERE id IN ($idList)");
+    $documents = [];
+    while ($row = $res->fetch_assoc()) {
+        $documents[] = $row;
+    }
+
+    if ($conn->query("DELETE FROM documents WHERE id IN ($idList)")) {
+        foreach ($documents as $doc) {
+            logUserActivity(
+                $conn,
+                $user_id,
+                $full_name,
+                "Deleted Voucher Record",
+                "Document Voucher Records",
+                $doc['id'],
+                $doc['control_no'],
+                "Deleted Voucher Record, Control No: " . $doc['control_no']
+            );
+        }
+        echo json_encode(["success" => true]);
+    } else {
+        echo json_encode(["success" => false, "error" => $conn->error]);
     }
     exit;
 }

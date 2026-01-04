@@ -1,6 +1,7 @@
 <?php
 session_start();
 include '../../db.php';
+date_default_timezone_set('Asia/Manila');
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../../index.php");

@@ -6,78 +6,71 @@ async function printSelectedCheckTransmittal() {
         return;
     }
 
-    // === STEP 1: Collect selected IDs ===
     const ids = selected.map(cb => cb.value);
 
-    // === STEP 2: Request new Transmittal ID + Update DB ===
-    let result;
+    // STEP 1: Fetch full data for each ID
+    const rowsData = [];
+    try {
+        for (let id of ids) {
+            const res = await fetch(`Controllers/CheckController.php?action=get_check_print&id=${id}`);
+            const data = await res.json();
+            if (data.check_date && data.status) {
+                rowsData.push(data);
+            }
+        }
+    } catch (err) {
+        Swal.fire("Error", "Failed to fetch document data.", "error");
+        return;
+    }
+
+    if (rowsData.length === 0) {
+        Swal.fire("Invalid Selection", "Only records with Check Date can be printed.", "error");
+        return;
+    }
+
+    // STEP 2: Request Transmittal ID from backend
+    let transmittalId;
     try {
         const response = await fetch("Controllers/TransmittalController.php", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ids })
         });
-
-        result = await response.json();
+        const result = await response.json();
         if (!result.success) {
-            Swal.fire("Error", "Failed to generate check transmittal number.", "error");
+            Swal.fire("Error", "Failed to generate transmittal number.", "error");
             return;
         }
-
+        transmittalId = result.transmittal_id;
     } catch (e) {
         Swal.fire("Error", "Server not responding.", "error");
         return;
     }
 
-    // Use backend-generated transmittal number
-    const transmittalId = result.transmittal_id;
-
-    // === STEP 3: Update UI label (Navbar) ===
-    const navSpan = document.querySelector(".navbar .left span");
-    if (navSpan) navSpan.textContent = transmittalId;
-
-    // === STEP 4: Build rows HTML ===
+    // STEP 3: Build HTML rows
     let rowsHTML = "";
-    let count = 0;
-
-    selected.forEach(row => {
-        const col = row.closest("tr").children;
-        count++;
-
-        const controlNo = col[1].textContent.trim();
-        const payee     = col[2].textContent.trim();
-        const bank      = col[3].textContent.trim();
-        const checkDate = col[4].textContent.trim();
-        const status    = col[5].textContent.trim();
-
-        // Only valid rows
-        if (checkDate !== "-" && status !== "") {
-            rowsHTML += `
-                <tr>
-                    <td>${controlNo}</td>
-                    <td>${payee}</td>
-                    <td>${bank}</td>
-                    <td>${checkDate}</td>
-                    <td>${status}</td>
-                </tr>
-            `;
-        }
+    rowsData.forEach((row, index) => {
+        rowsHTML += `
+            <tr>
+                <td>${row.control_no}</td>
+                <td>${row.payee}</td>
+                <td>${row.description ?? "-"}</td>
+                <td style="text-align:right;">${row.amount ?? "-"}</td>
+                <td>${row.fund_type ?? "-"}</td>
+                <td>${row.bank_channel ?? "-"}</td>
+                <td>${row.check_date ?? "-"}</td>
+                <td>${row.date_out ?? "-"}</td>
+                <td>${row.status ?? "-"}</td>
+            </tr>
+        `;
     });
 
-    if (rowsHTML === "") {
-        Swal.fire("Invalid Selection", "Only records with Check Date can be printed.", "error");
-        return;
-    }
-
-    // === STEP 5: Current date/time ===
+    // STEP 4: Print
     const now = new Date();
     const dateStr = now.toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "numeric" });
     const timeStr = now.toLocaleTimeString("en-US");
-
-    // === STEP 6: Fetch user name ===
     const userName = document.querySelector(".header-user strong").textContent.trim();
 
-    // === PRINT TEMPLATE ===
     const content = `
         <div class="paper">
             <div class="voucher-header">
@@ -96,17 +89,19 @@ async function printSelectedCheckTransmittal() {
                     <tr>
                         <th>Control No.</th>
                         <th>Payee</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Fund Type</th>
                         <th>Bank Channel</th>
                         <th>Check Date</th>
+                        <th>Date Out</th>
                         <th>Status</th>
                     </tr>
                 </thead>
-                <tbody>
-                    ${rowsHTML}
-                </tbody>
+                <tbody>${rowsHTML}</tbody>
             </table>
 
-            <div class="voucher-count">Count: ${count}</div>
+            <div class="voucher-count">Count: ${rowsData.length}</div>
 
             <div class="voucher-receive">
                 RECEIVED BY:_________________ DATE:_____________ TIME:_____________
@@ -119,68 +114,27 @@ async function printSelectedCheckTransmittal() {
         </div>
     `;
 
-    // === STEP 7: Print ===
-    const printWindow = window.open('', '', 'width=900,height=600');
+    const printWindow = window.open('', '', 'width=1200,height=700'); // wider window for landscape
     printWindow.document.write(`
         <html>
         <head>
             <title>Check Transmittal Print</title>
             <style>
-                @page { size: A4; margin: 10mm; }
-                body { 
-                    font-family: serif; 
-                    font-size: 13px; 
-                }
-                .voucher-header { 
-                    display: grid; 
-                    grid-template-columns: 1fr 1fr 1fr; 
-                    text-align: center; 
-                    font-weight: bold; 
-                    margin-bottom: 6mm; 
-                }
-                .voucher-subheader { 
-                    display: flex; 
-                    justify-content: space-between; 
-                    margin-bottom: 6mm; 
-                }
-                .voucher-table { 
-                    width: 100%; 
-                    border-collapse: collapse; 
-                    margin-bottom: 5mm; 
-                }
-                .voucher-table th { 
-                    border-bottom: 1px solid #000; 
-                    padding: 3px 2px; 
-                    font-size: 13px; 
-                    text-align: left; 
-                }
-                .voucher-table td { 
-                    padding: 3px 2px; 
-                    font-size: 13px; 
-                }
-                .voucher-count { 
-                    margin-top: 3mm; 
-                    font-size: 13px; 
-                    font-weight: bold; 
-                }
-                .voucher-receive { 
-                    margin-top: 25mm; 
-                    text-align: right; 
-                    font-size: 12px; 
-                    font-weight: bold; 
-                }
-                .voucher-footer { 
-                    margin-top: 25mm; 
-                    display: flex; 
-                    justify-content: space-between; 
-                    font-size: 11px; 
-                }
+                @page { size: A4 landscape; margin: 10mm; }
+                body { font-family: serif; font-size: 13px; }
+                .voucher-header { display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; font-weight: bold; margin-bottom: 6mm; }
+                .voucher-subheader { display: flex; justify-content: space-between; margin-bottom: 6mm; }
+                .voucher-table { width: 100%; border-collapse: collapse; margin-bottom: 5mm; }
+                .voucher-table th { border-bottom: 1px solid #000; padding: 3px 2px; font-size: 13px; text-align: left; }
+                .voucher-table td { padding: 3px 2px; font-size: 13px; }
+                .voucher-count { margin-top: 3mm; font-size: 13px; font-weight: bold; }
+                .voucher-receive { margin-top: 25mm; text-align: right; font-size: 12px; font-weight: bold; }
+                .voucher-footer { margin-top: 25mm; display: flex; justify-content: space-between; font-size: 11px; }
             </style>
         </head>
         <body>${content}</body>
         </html>
     `);
-
     printWindow.document.close();
     printWindow.print();
 }
