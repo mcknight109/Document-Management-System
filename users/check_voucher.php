@@ -42,6 +42,7 @@ if (!empty($user['permissions'])) {
 
 // Check if user has voucher_records permission
 $canAccessCheck = in_array("check_records", $user_permissions);
+$canDeleteCheck = in_array("delete_records", $user_permissions);
 
 date_default_timezone_set('Asia/Manila');
 $currentDate = date("M d, Y");
@@ -159,65 +160,65 @@ $currentDate = date("M d, Y");
                     <li id="checkReleaseOption"><i class="bi bi-file-earmark-check"></i> Check Release</li>
                 </ul>
             </div>
-          <div class="footer">
-    <button>&laquo;</button>
-    <button>&lsaquo;</button>
-    <button>&rsaquo;</button>
-    <button>&raquo;</button>
-</div>
+            <div class="footer">
+                <button>&laquo;</button>
+                <button>&lsaquo;</button>
+                <button>&rsaquo;</button>
+                <button>&raquo;</button>
+            </div>
 
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const rowsPerPage = 11; // Number of rows per page
-    const table = document.getElementById("recordsTable");
-    const tbody = table.querySelector("tbody");
-    const allRows = Array.from(tbody.querySelectorAll("tr"));
-    const footerButtons = document.querySelector(".footer").querySelectorAll("button");
+            <script>
+                document.addEventListener("DOMContentLoaded", () => {
+                    const rowsPerPage = 11; // Number of rows per page
+                    const table = document.getElementById("recordsTable");
+                    const tbody = table.querySelector("tbody");
+                    const allRows = Array.from(tbody.querySelectorAll("tr"));
+                    const footerButtons = document.querySelector(".footer").querySelectorAll("button");
 
-    let currentPage = 1;
-    const totalPages = Math.ceil(allRows.length / rowsPerPage);
+                    let currentPage = 1;
+                    const totalPages = Math.ceil(allRows.length / rowsPerPage);
 
-    function renderPage(page) {
-        currentPage = page;
+                    function renderPage(page) {
+                        currentPage = page;
 
-        // Hide all rows
-        allRows.forEach(row => row.style.display = "none");
+                        // Hide all rows
+                        allRows.forEach(row => row.style.display = "none");
 
-        // Calculate start/end index
-        const start = (page - 1) * rowsPerPage;
-        const end = start + rowsPerPage;
+                        // Calculate start/end index
+                        const start = (page - 1) * rowsPerPage;
+                        const end = start + rowsPerPage;
 
-        // Show current page rows
-        allRows.slice(start, end).forEach(row => row.style.display = "");
+                        // Show current page rows
+                        allRows.slice(start, end).forEach(row => row.style.display = "");
 
-        // Enable/disable buttons
-        footerButtons[0].disabled = currentPage === 1; // First <<
-        footerButtons[1].disabled = currentPage === 1; // Prev <
-        footerButtons[2].disabled = currentPage === totalPages; // Next >
-        footerButtons[3].disabled = currentPage === totalPages; // Last >>
-    }
+                        // Enable/disable buttons
+                        footerButtons[0].disabled = currentPage === 1; // First <<
+                        footerButtons[1].disabled = currentPage === 1; // Prev <
+                        footerButtons[2].disabled = currentPage === totalPages; // Next >
+                        footerButtons[3].disabled = currentPage === totalPages; // Last >>
+                    }
 
-    // Footer button events
-    footerButtons[0].addEventListener("click", () => renderPage(1)); // First <<
-    footerButtons[1].addEventListener("click", () => renderPage(currentPage - 1)); // Prev <
-    footerButtons[2].addEventListener("click", () => renderPage(currentPage + 1)); // Next >
-    footerButtons[3].addEventListener("click", () => renderPage(totalPages)); // Last >>
+                    // Footer button events
+                    footerButtons[0].addEventListener("click", () => renderPage(1)); // First <<
+                    footerButtons[1].addEventListener("click", () => renderPage(currentPage - 1)); // Prev <
+                    footerButtons[2].addEventListener("click", () => renderPage(currentPage + 1)); // Next >
+                    footerButtons[3].addEventListener("click", () => renderPage(totalPages)); // Last >>
 
-    // Initial render
-    renderPage(1);
-});
-</script>
+                    // Initial render
+                    renderPage(1);
+                });
+            </script>
 
         </div>
 
         <div class="button-panel">
-            <button onclick="openCheckRecord()" <?= !$canAccessCheck ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '' ?>><i class="fa-solid fa-plus"></i> Check Record</button>
-            <button onclick="printCheck()"><i class="fa-solid fa-print"></i> Check Print</button>
-            <button onclick="printSelectedCheckTransmittal()">
+            <button onclick="openCheckRecord()" <?= !$canAccessCheck ? 'disabled style="opacity:0.5;"' : '' ?>><i class="fa-solid fa-plus"></i> Check Record</button>
+            <button onclick="printCheck()" <?= !$canAccessCheck ? 'disabled style="opacity:0.5;"' : '' ?>><i class="fa-solid fa-print"></i> Check Print</button>
+            <button onclick="printSelectedCheckTransmittal()" <?= !$canAccessCheck ? 'disabled style="opacity:0.5;"' : '' ?>>
                 <i class="fa-solid fa-print"></i> Transmittal Print
             </button>
-            <button onclick="deleteSelected()" style="background-color:#dc2626; color:#fff;">
-                <i class="fa-solid fa-trash"></i> Delete Selected
+            <button onclick="deleteSelected()" <?= !$canDeleteCheck ? 'disabled style="background:#6b7280;color:#ffffff;opacity:0.6;"' : '' ?> style="background-color:#dc2626; color:#fff;">
+                <i class="fa-solid fa-trash"></i> Delete
             </button>
             <button onclick="window.location.href='../index.php'" style="background-color: #4b5563;"><i class="fa-solid fa-xmark"></i> Exit</button>
         </div>
@@ -251,14 +252,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 <div class="form-group">
                     <label>Check Number</label>
-                        <input 
-                            type="tel"
-                            inputmode="numeric"
-                            id="checkNo"
-                            name="checkNo"
-                            placeholder="00000000"
-                            required
-                        >
+                    <input
+                        type="tel"
+                        inputmode="numeric"
+                        id="checkNo"
+                        name="checkNo"
+                        placeholder="00000000"
+                        required>
                 </div>
 
                 <div class="form-group">
@@ -368,8 +368,17 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         function deleteSelected() {
-            const selectedCheckboxes = document.querySelectorAll(".record-checkbox:checked");
+            <?php if (!$canDeleteCheck): ?>
+                Swal.fire({
+                    icon: "warning",
+                    title: "Permission Denied",
+                    text: "You don't have permission to delete check records.",
+                    confirmButtonColor: "#3085d6"
+                });
+                return;
+            <?php endif; ?>
 
+            const selectedCheckboxes = document.querySelectorAll(".record-checkbox:checked");
             if (selectedCheckboxes.length === 0) {
                 Swal.fire("No record selected", "Please select at least one row to delete.", "info");
                 return;
@@ -386,33 +395,38 @@ document.addEventListener("DOMContentLoaded", () => {
 
             Swal.fire({
                 title: 'Confirm Delete',
-                html: `<p>Are you sure you want to delete the following Control No.?</p><b>${controlNums.join(", ")}</b>`,
+                html: `<p>Control No.</p><b>${controlNums.join(", ")}</b>`,
                 icon: "warning",
                 showCancelButton: true,
-                confirmButtonText: "Yes, delete",
+                confirmButtonText: "Delete",
                 cancelButtonText: "Cancel",
                 confirmButtonColor: "#d33"
             }).then(result => {
                 if (result.isConfirmed) {
                     fetch("Controllers/CheckController.php", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ action: "delete", ids })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            Swal.fire({
-                                icon: "success",
-                                title: "Deleted successfully!",
-                                timer: 1200,
-                                showConfirmButton: false
-                            }).then(() => location.reload());
-                        } else {
-                            Swal.fire("Error", data.error || "Failed to delete records.", "error");
-                        }
-                    })
-                    .catch(() => Swal.fire("Error", "Request failed.", "error"));
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                action: "delete",
+                                ids
+                            })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: "success",
+                                    title: "Deleted successfully!",
+                                    timer: 1200,
+                                    showConfirmButton: false
+                                }).then(() => location.reload());
+                            } else {
+                                Swal.fire("Error", data.error || "Failed to delete records.", "error");
+                            }
+                        })
+                        .catch(() => Swal.fire("Error", "Request failed.", "error"));
                 }
             });
         }
@@ -446,30 +460,30 @@ document.addEventListener("DOMContentLoaded", () => {
             formData.append("action", "save_check");
 
             fetch("Controllers/CheckController.php", {
-                method: "POST",
-                body: formData
-            })
-            .then(res => res.text())
-            .then(resp => {
-                if (resp.trim() === "success") {
-                    Swal.fire({
-                        icon: "success",
-                        title: "Saved!",
-                        text: "Check record saved successfully."
-                    }).then(() => location.reload());
-                } else {
-                    Swal.fire({
-                        icon: "error",
-                        title: "Error",
-                        text: "Failed to save check record."
-                    });
-                }
-            });
+                    method: "POST",
+                    body: formData
+                })
+                .then(res => res.text())
+                .then(resp => {
+                    if (resp.trim() === "success") {
+                        Swal.fire({
+                            icon: "success",
+                            title: "Saved!",
+                            text: "Check record saved successfully."
+                        }).then(() => location.reload());
+                    } else {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Error",
+                            text: "Failed to save check record."
+                        });
+                    }
+                });
         });
     </script>
 
     <script>
-                document.addEventListener("DOMContentLoaded", () => {
+        document.addEventListener("DOMContentLoaded", () => {
             const checkNo = document.getElementById("checkNo");
 
             // Initial value

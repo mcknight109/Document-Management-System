@@ -145,6 +145,7 @@ $user_permissions = is_array($user_permissions) ? $user_permissions : [];
                             "communications_records" => "Communications Records",
                             "activity_records" => "Activity Records",
                             "certificate_records" => "Certificate Records",
+                            "delete_records" => "Delete Records"
                         ];
 
                         foreach ($perm_list as $val => $label): ?>
@@ -171,7 +172,6 @@ $user_permissions = is_array($user_permissions) ? $user_permissions : [];
         Swal.fire({
             icon: 'success',
             title: 'Account Updated Successfully!',
-            text: 'The user account details have been saved.',
             confirmButtonColor: '#3085d6'
         }).then(() => {
             window.location.href = "user_manage.php";

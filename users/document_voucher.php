@@ -46,6 +46,7 @@ if (!empty($user['permissions'])) {
 
 // Check if user has voucher_records permission
 $canAccessVoucher = in_array("voucher_records", $user_permissions);
+$canDeleteRecords = in_array("delete_records", $user_permissions);
 
 // Fetch next control number
 $controlQuery = $conn->query("SELECT control_no FROM documents ORDER BY id DESC LIMIT 1");
@@ -223,16 +224,16 @@ if ($documentsResult && $documentsResult->num_rows > 0) {
             </div>
         </div>
         <div class="button-panel">
-            <button onclick="addRow()" <?= !$canAccessVoucher ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '' ?>>
+            <button onclick="addRow()" <?= !$canAccessVoucher ? 'disabled style="opacity:0.5;"' : '' ?>>
                 <i class="fa-solid fa-plus"></i> Add Record
             </button>
 
-            <button onclick="printSelectedTransmittal()">
+            <button onclick="printSelectedTransmittal()" <?= !$canAccessVoucher ? 'disabled style="opacity:0.5;"' : '' ?>>
                 <i class="fa-solid fa-print"></i> Transmittal Print
             </button>
 
-            <button onclick="deleteSelected()" style="background-color:#dc2626; color:#fff;">
-                <i class="fa-solid fa-trash"></i> Delete Selected
+            <button onclick="deleteSelected()" <?= !$canDeleteRecords ? 'disabled style="background:#6b7280;color:#ffffff;opacity:0.6;"' : '' ?> style="background-color:#dc2626; color:#fff;">
+                <i class="fa-solid fa-trash"></i> Delete
             </button>
 
             <button onclick="window.location.href='../index.php'" style="background-color: #4b5563;">
@@ -410,6 +411,17 @@ if ($documentsResult && $documentsResult->num_rows > 0) {
         }
 
         function deleteSelected() {
+            // Check if user has delete permission
+            <?php if (!$canDeleteRecords): ?>
+                Swal.fire({
+                    icon: "warning",
+                    title: "Permission Denied",
+                    text: "You don't have permission to delete records.",
+                    confirmButtonColor: "#3085d6"
+                });
+                return;
+            <?php endif; ?>
+
             const selectedCheckboxes = document.querySelectorAll(".rowCheckbox:checked");
 
             if (selectedCheckboxes.length === 0) {
@@ -428,33 +440,38 @@ if ($documentsResult && $documentsResult->num_rows > 0) {
 
             Swal.fire({
                 title: 'Confirm Delete',
-                html: `<p>Are you sure you want to delete the following Control No.?</p><b>${controlNums.join(", ")}</b>`,
+                html: `<p>Control No.</p><b>${controlNums.join(", ")}</b>`,
                 icon: "warning",
                 showCancelButton: true,
-                confirmButtonText: "Yes, delete",
+                confirmButtonText: "Delete",
                 cancelButtonText: "Cancel",
                 confirmButtonColor: "#d33"
             }).then(result => {
                 if (result.isConfirmed) {
                     fetch("Controllers/VoucherController.php", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ action: "delete", ids })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            Swal.fire({
-                                icon: "success",
-                                title: "Deleted successfully!",
-                                timer: 1200,
-                                showConfirmButton: false
-                            }).then(() => location.reload());
-                        } else {
-                            Swal.fire("Error", data.error || "Failed to delete records.", "error");
-                        }
-                    })
-                    .catch(() => Swal.fire("Error", "Request failed.", "error"));
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                action: "delete",
+                                ids
+                            })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: "success",
+                                    title: "Deleted successfully!",
+                                    timer: 1200,
+                                    showConfirmButton: false
+                                }).then(() => location.reload());
+                            } else {
+                                Swal.fire("Error", data.error || "Failed to delete records.", "error");
+                            }
+                        })
+                        .catch(() => Swal.fire("Error", "Request failed.", "error"));
                 }
             });
         }

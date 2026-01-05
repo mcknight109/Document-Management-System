@@ -41,6 +41,7 @@ $indorseStmt = $conn->prepare("
     SELECT COUNT(*) AS total 
     FROM communications 
     WHERE indorse_to = ?
+    AND (action_taken IS NULL OR action_taken = '')
 ");
 $indorseStmt->bind_param("s", $full_name);
 $indorseStmt->execute();
@@ -48,7 +49,9 @@ $indorseCount = $indorseStmt->get_result()->fetch_assoc()['total'] ?? 0;
 
 // Fetch indorsed records for this user
 $indorsedRecordsQuery = $conn->prepare("
-    SELECT * FROM communications
+    SELECT *,
+           DATE_FORMAT(indorsed_action_at, '%M %d, %Y %h:%i %p') as action_taken_formatted
+    FROM communications
     WHERE indorse_to = ?
     ORDER BY date_routed DESC
 ");
@@ -64,6 +67,7 @@ if (!empty($user['permissions'])) {
 
 // Check if user has voucher_records permission
 $canAccessCommunication = in_array("communications_records", $user_permissions);
+$canDeleteCommunication = in_array("delete_records", $user_permissions);
 
 // Pagination setup
 $limit = 10; // records per page
@@ -107,28 +111,6 @@ if ($comResult->num_rows > 0) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/users/communication.css">
-    <style>
-        .indorse-badge {
-            position: absolute;
-            top: -6px;
-            right: -6px;
-            background: #dc3545;
-            /* red */
-            color: #fff;
-            font-size: 12px;
-            font-weight: bold;
-            padding: 2px 6px;
-            border-radius: 50%;
-            min-width: 20px;
-            text-align: center;
-            line-height: 16px;
-        }
-
-        .out-disabled {
-            background: #e9ecef !important;
-            cursor: not-allowed !important;
-        }
-    </style>
 </head>
 
 <body>
@@ -261,6 +243,7 @@ if ($comResult->num_rows > 0) {
                             </form>
                         </div>
                         <!-- SHOW INDORSED TABLE  -->
+                        <!-- SHOW INDORSED TABLE -->
                         <div id="indorsedTableContainer" style="display: none;">
                             <table class="table table-hover align-middle text-center">
                                 <thead>
@@ -272,26 +255,57 @@ if ($comResult->num_rows > 0) {
                                         <th>Routed By</th>
                                         <th>Action</th>
                                         <th>Remarks</th>
-                                        <th>Action Duration</th>
+                                        <th>Action Duration</th> <!-- NEW COLUMN -->
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php if ($indorsedRecords->num_rows > 0): ?>
-                                        <?php while ($row = $indorsedRecords->fetch_assoc()): ?>
+                                        <?php
+                                        // Re-fetch with duration calculation
+                                        $indorsedWithDurationQuery = $conn->prepare("
+                    SELECT *,
+                           DATE_FORMAT(indorsed_action_at, '%M %d, %Y %h:%i %p') as action_taken_formatted,
+                           action_duration
+                    FROM communications
+                    WHERE indorse_to = ?
+                    ORDER BY date_routed DESC
+                ");
+                                        $indorsedWithDurationQuery->bind_param("s", $full_name);
+                                        $indorsedWithDurationQuery->execute();
+                                        $indorsedRecordsWithDuration = $indorsedWithDurationQuery->get_result();
+
+                                        while ($row = $indorsedRecordsWithDuration->fetch_assoc()):
+                                        ?>
                                             <tr class="text-center" data-row='<?= htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8') ?>'>
                                                 <td><input type='checkbox' class='rowCheckbox' name='delete_ids[]' value='<?= $row['id'] ?>'></td>
                                                 <td><?= htmlspecialchars($row['com_id']) ?></td>
                                                 <td><?= htmlspecialchars($row['indorse_to']) ?></td>
-                                                <td><?= htmlspecialchars($row['date_routed'] ?: '-') ?></td>
+                                                <td>
+                                                    <?php
+                                                    if (!empty($row['date_routed'])) {
+                                                        echo date("M d, Y h:i A", strtotime($row['date_routed']));
+                                                    } else {
+                                                        echo '-';
+                                                    }
+                                                    ?>
+                                                </td>
                                                 <td><?= htmlspecialchars($row['routed_by'] ?: '-') ?></td>
                                                 <td><?= htmlspecialchars($row['action_taken'] ?: '-') ?></td>
                                                 <td><?= htmlspecialchars($row['remarks'] ?: '-') ?></td>
-                                                <td><?= htmlspecialchars($row['action_duration'] ?: '-') ?></td>
+                                                <td>
+                                                    <?php
+                                                    if (!empty($row['action_duration'])) {
+                                                        echo htmlspecialchars($row['action_duration']);
+                                                    } else {
+                                                        echo '-';
+                                                    }
+                                                    ?>
+                                                </td>
                                             </tr>
                                         <?php endwhile; ?>
                                     <?php else: ?>
                                         <tr>
-                                            <td colspan="6" class="text-center text-muted">
+                                            <td colspan="9" class="text-center text-muted"> <!-- Updated colspan to 9 -->
                                                 <i class="bi bi-inbox"></i> No indorsed records found
                                             </td>
                                         </tr>
@@ -366,6 +380,8 @@ if ($comResult->num_rows > 0) {
                                 <input type="text" name="indorse_to" id="indorse_to" class="form-control" placeholder="Enter recipient" autocomplete="off">
                                 <div id="indorseToSuggestions" class="suggestions-dropdown"></div>
                             </div>
+
+                            <input type="hidden" name="date_routed" id="date_routed_hidden">
                             <div class="mb-3">
                                 <label class="form-label">Date Routed</label>
                                 <input type="date" name="date_routed" id="date_routed" class="form-control">
@@ -385,11 +401,11 @@ if ($comResult->num_rows > 0) {
                                 <textarea name="remarks" id="remarks" class="form-control" rows="3" placeholder="Enter remarks"></textarea>
                             </div>
                             <div class="form-buttons">
-                                <button type="submit" name="save_edit" class="btn btn-custom" <?= !$canAccessCommunication ? 'disabled style="background:darkblue;color:#ffffff;opacity:0.8;cursor:not-allowed;"' : '' ?>>
+                                <button type="submit" name="save_edit" class="btn btn-custom" <?= !$canAccessCommunication ? 'disabled style="background:darkblue;color:#ffffff;opacity:0.8;"' : '' ?>>
                                     <i class="bi bi-pencil-square"></i> Save Edit
                                 </button>
 
-                                <button type="button" onclick="deleteSelected()" class="btn btn-danger" <?= !$canAccessCommunication ? 'disabled style="background:red;color:#ffffff;opacity:0.8;cursor:not-allowed;"' : '' ?>>
+                                <button type="button" onclick="deleteSelected()" class="btn btn-danger delete-btn" <?= !$canDeleteCommunication ? 'disabled' : '' ?>>
                                     <i class="bi bi-trash"></i> Delete
                                 </button>
 
@@ -622,17 +638,35 @@ if ($comResult->num_rows > 0) {
 
     <script>
         function deleteSelected() {
+            // Check if user has delete permission (PHP variable)
+            <?php if (!$canDeleteCommunication): ?>
+                Swal.fire({
+                    icon: "warning",
+                    title: "Permission Denied",
+                    text: "You don't have permission to delete communication records.",
+                    confirmButtonColor: "#3085d6"
+                });
+                return;
+            <?php endif; ?>
+
             const selectedCheckboxes = document.querySelectorAll(".rowCheckbox:checked");
             if (selectedCheckboxes.length === 0) {
                 Swal.fire("No record selected", "Please select at least one row to delete.", "info");
                 return;
             }
 
-            let ids = Array.from(selectedCheckboxes).map(cb => cb.value);
+            let ids = [];
+            let controlNums = [];
+
+            selectedCheckboxes.forEach(cb => {
+                ids.push(cb.value);
+                let controlNum = cb.closest("tr").children[1].textContent.trim();
+                controlNums.push(controlNum);
+            });
 
             Swal.fire({
                 title: 'Confirm Delete',
-                text: 'Are you sure you want to delete the selected record(s)?',
+                html: `<p>Control No.</p><b>${controlNums.join(", ")}</b>`,
                 icon: "warning",
                 showCancelButton: true,
                 confirmButtonText: "Yes, delete",
@@ -1112,6 +1146,51 @@ if ($comResult->num_rows > 0) {
             if (e.key === "Enter") {
                 filterTable();
             }
+        });
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const dateRoutedDisplay = document.getElementById('date_routed_display');
+            const dateRoutedHidden = document.getElementById('date_routed_hidden');
+
+            // When a row is clicked from main table
+            document.querySelectorAll('#recordsTable tbody tr').forEach(row => {
+                row.addEventListener('click', function() {
+                    if (!this.dataset.row) return;
+
+                    const data = JSON.parse(this.dataset.row);
+                    const routedDate = data.date_routed;
+
+                    if (routedDate) {
+                        // Format for display
+                        dateRoutedDisplay.value = routedDate.includes(' ') ? routedDate.replace(' ', 'T') : routedDate + 'T00:00';
+                        dateRoutedHidden.value = routedDate;
+                    } else {
+                        dateRoutedDisplay.value = '';
+                        dateRoutedHidden.value = '';
+                    }
+                });
+            });
+
+            // When a row is clicked from indorsed table
+            document.querySelectorAll('#indorsedTableContainer tbody tr').forEach(row => {
+                row.addEventListener('click', function() {
+                    if (!this.dataset.row) return;
+
+                    const data = JSON.parse(this.dataset.row);
+                    const routedDate = data.date_routed;
+
+                    if (routedDate) {
+                        // Format for display
+                        dateRoutedDisplay.value = routedDate.includes(' ') ? routedDate.replace(' ', 'T') : routedDate + 'T00:00';
+                        dateRoutedHidden.value = routedDate;
+                    } else {
+                        dateRoutedDisplay.value = '';
+                        dateRoutedHidden.value = '';
+                    }
+                });
+            });
         });
     </script>
 
