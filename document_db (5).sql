@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 11, 2025 at 07:18 AM
+-- Generation Time: Jan 06, 2026 at 05:36 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -149,38 +149,40 @@ CREATE TABLE `communications` (
   `sender` varchar(255) NOT NULL,
   `description` text NOT NULL,
   `indorse_to` varchar(255) DEFAULT NULL,
-  `date_routed` date DEFAULT NULL,
+  `date_routed` datetime DEFAULT NULL,
   `routed_by` varchar(255) DEFAULT NULL,
   `action_taken` varchar(255) DEFAULT NULL,
   `remarks` text DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `indorsed_action_at` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `action_duration` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `communications`
 --
 
-INSERT INTO `communications` (`id`, `user_id`, `com_id`, `date_received`, `sender`, `description`, `indorse_to`, `date_routed`, `routed_by`, `action_taken`, `remarks`, `created_at`) VALUES
-(1, 5, '1', '2025-01-03', 'DILG Cebu', 'Request for updated tax clearance.', 'ADMIN DIVISION', '2025-01-03', 'Atty. Cruz', 'APPROPRIATE ACTION', 'Processed.', '2025-12-11 03:02:39'),
-(2, 5, '2', '2025-01-05', 'Barangay Poblacion', 'Submission of annual report.', 'LANDTAX DIVISION', '2025-01-05', 'Mr. Santos', 'FILE', 'Filed in records.', '2025-12-11 03:02:39'),
-(3, 5, '3', '2025-01-06', 'Business Permit Office', 'Inquiry regarding permit verification.', 'LICENSE DIVISION', '2025-01-06', 'Ms. Reyes', 'COMMENT/SAND/OR', 'Forwarded.', '2025-12-11 03:02:39'),
-(4, 5, '4', '2025-01-07', 'City Treasurer', 'Notice for fund allocation.', 'CASH DIVISION', '2025-01-07', 'Mr. Lopez', 'U-R-G-E-N-T', 'Immediate attention.', '2025-12-11 03:02:39'),
-(5, 5, '5', '2025-01-08', 'Civil Service Commission', 'Guidelines on new memo.', 'TORU DIVISION', '2025-01-08', 'Atty. Ramos', 'FURNISH COPY', 'Distributed.', '2025-12-11 03:02:39'),
-(6, 5, '6', '2025-01-09', 'DepEd Cebu', 'Request for budget certification.', 'RECORDS SECTION', '2025-01-09', 'Ms. Flores', 'APPROPRIATE ACTION', 'Ongoing review.', '2025-12-11 03:02:39'),
-(7, 5, '7', '2025-01-10', 'LTO Region 7', 'Coordination for joint inspection.', 'BUS. TAX MAPPING SECTION', '2025-01-10', 'Mr. Garcia', 'REPRESENT THIS OFFICE', 'Coordinated.', '2025-12-11 03:02:39'),
-(8, 5, '8', '2025-01-11', 'Office of the Mayor', 'Urgent endorsement to finance.', 'GRACE ATTY. TERENCE', '2025-01-11', 'Atty. Mendoza', 'U-R-G-E-N-T', 'Handled immediately.', '2025-12-11 03:02:39'),
-(9, 5, '9', '2025-01-12', 'Barangay Tayud', 'Submission of permit requests.', 'LICENSE DIVISION', '2025-01-12', 'Mr. Chan', 'FILE', 'Completed.', '2025-12-11 03:02:39'),
-(10, 5, '10', '2025-01-13', 'DBM Region VII', 'Clarification on budget circular.', 'ADMIN DIVISION', '2025-01-13', 'Ms. Domingo', 'COMMENT/SAND/OR', 'Awaiting reply.', '2025-12-11 03:02:39'),
-(11, 5, '11', '2025-01-14', 'DOT Cebu', 'Endorsement for tourism support.', 'RECORDS SECTION', '2025-01-14', 'Mr. Manuel', 'FURNISH COPY', 'Copy furnished.', '2025-12-11 03:02:39'),
-(12, 5, '12', '2025-01-15', 'DSWD Region 7', 'Requesting tax exemption assessment.', 'LANDTAX DIVISION', '2025-01-15', 'Ms. Hernandez', 'APPROPRIATE ACTION', 'Forwarded.', '2025-12-11 03:02:39'),
-(13, 5, '13', '2025-01-16', 'BIR Cebu', 'Assessment for delinquent accounts.', 'CASH DIVISION', '2025-01-16', 'Mr. Rivera', 'U-R-G-E-N-T', 'Handled.', '2025-12-11 03:02:39'),
-(14, 5, '14', '2025-01-17', 'PhilHealth', 'Letter for coordination meeting.', 'TORU DIVISION', '2025-01-17', 'Atty. Dizon', 'REPRESENT THIS OFFICE', 'Scheduled.', '2025-12-11 03:02:39'),
-(15, 5, '15', '2025-01-18', 'GSIS Cebu', 'Document request for review.', 'BUS. TAX MAPPING SECTION', '2025-01-18', 'Mr. Bautista', 'FILE', 'Archived.', '2025-12-11 03:02:39'),
-(16, 5, '16', '2025-01-19', 'PNP Cebu City', 'Coordination for certification.', 'ADMIN DIVISION', '2025-01-19', 'Ms. Aquino', 'COMMENT/SAND/OR', 'Submitted to chief.', '2025-12-11 03:02:39'),
-(17, 5, '17', '2025-01-20', 'CHED Region 7', 'Request for validation.', 'LICENSE DIVISION', '2025-01-20', 'Atty. Franco', 'APPROPRIATE ACTION', 'Processing.', '2025-12-11 03:02:39'),
-(18, 5, '18', '2025-01-21', 'Lapu-Lapu City Hall', 'Support letter for project.', 'GRACE ATTY. TERENCE', '2025-01-21', 'Ms. Santos', 'TAKE UP WITH ME', 'For review.', '2025-12-11 03:02:39'),
-(19, 5, '19', '2025-01-22', 'Barangay Cotcot', 'Clarification on tax dues.', 'LANDTAX DIVISION', '2025-01-22', 'Mr. Perez', 'APPROPRIATE ACTION', 'Forwarded.', '2025-12-11 03:02:39'),
-(20, 5, '20', '2025-01-23', 'Cebu Water District', 'Follow-up on unpaid accounts.', 'CASH DIVISION', '2025-01-23', 'Ms. Gomez', 'U-R-G-E-N-T', 'Settled.', '2025-12-11 03:02:39');
+INSERT INTO `communications` (`id`, `user_id`, `com_id`, `date_received`, `sender`, `description`, `indorse_to`, `date_routed`, `routed_by`, `action_taken`, `remarks`, `indorsed_action_at`, `created_at`, `action_duration`) VALUES
+(1, 5, '1', '2025-01-03', 'DILG Cebu', 'Request for updated tax clearance.', 'ADMIN DIVISION', '2025-01-03 00:00:00', 'Atty. Cruz', 'APPROPRIATE ACTION', 'Processed.', NULL, '2025-12-11 03:02:39', NULL),
+(2, 5, '2', '2025-01-05', 'Barangay Poblacion', 'Submission of annual report.', 'LANDTAX DIVISION', '2025-01-05 00:00:00', 'Mr. Santos', 'FILE', 'Filed in records.', NULL, '2025-12-11 03:02:39', NULL),
+(3, 5, '3', '2025-01-06', 'Business Permit Office', 'Inquiry regarding permit verification.', 'LICENSE DIVISION', '2025-01-06 00:00:00', 'Ms. Reyes', 'COMMENT/SAND/OR', 'Forwarded.', NULL, '2025-12-11 03:02:39', NULL),
+(4, 5, '4', '2025-01-07', 'City Treasurer', 'Notice for fund allocation.', 'CASH DIVISION', '2025-01-07 00:00:00', 'Mr. Lopez', 'U-R-G-E-N-T', 'Immediate attention.', NULL, '2025-12-11 03:02:39', NULL),
+(5, 5, '5', '2025-01-08', 'Civil Service Commission', 'Guidelines on new memo.', 'TORU DIVISION', '2025-01-08 00:00:00', 'Atty. Ramos', 'FURNISH COPY', 'Distributed.', NULL, '2025-12-11 03:02:39', NULL),
+(6, 5, '6', '2025-01-09', 'DepEd Cebu', 'Request for budget certification.', 'RECORDS SECTION', '2025-01-09 00:00:00', 'Ms. Flores', 'APPROPRIATE ACTION', 'Ongoing review.', NULL, '2025-12-11 03:02:39', NULL),
+(7, 5, '7', '2025-01-10', 'LTO Region 7', 'Coordination for joint inspection.', 'BUS. TAX MAPPING SECTION', '2025-01-10 00:00:00', 'Mr. Garcia', 'REPRESENT THIS OFFICE', 'Coordinated.', NULL, '2025-12-11 03:02:39', NULL),
+(8, 5, '8', '2025-01-11', 'Office of the Mayor', 'Urgent endorsement to finance.', 'GRACE ATTY. TERENCE', '2025-01-11 00:00:00', 'Atty. Mendoza', 'U-R-G-E-N-T', 'Handled immediately.', NULL, '2025-12-11 03:02:39', NULL),
+(9, 5, '9', '2025-01-12', 'Barangay Tayud', 'Submission of permit requests.', 'LICENSE DIVISION', '2025-01-12 00:00:00', 'Mr. Chan', 'FILE', 'Completed.', NULL, '2025-12-11 03:02:39', NULL),
+(10, 5, '10', '2025-01-13', 'DBM Region VII', 'Clarification on budget circular.', 'ADMIN DIVISION', '2025-01-13 00:00:00', 'Ms. Domingo', 'COMMENT/SAND/OR', 'Awaiting reply.', NULL, '2025-12-11 03:02:39', NULL),
+(11, 5, '11', '2025-01-14', 'DOT Cebu', 'Endorsement for tourism support.', 'RECORDS SECTION', '2025-01-14 00:00:00', 'Mr. Manuel', 'FURNISH COPY', 'Copy furnished.', NULL, '2025-12-11 03:02:39', NULL),
+(12, 5, '12', '2025-01-15', 'DSWD Region 7', 'Requesting tax exemption assessment.', 'LANDTAX DIVISION', '2025-01-15 00:00:00', 'Ms. Hernandez', 'APPROPRIATE ACTION', 'Forwarded.', NULL, '2025-12-11 03:02:39', NULL),
+(13, 5, '13', '2025-01-16', 'BIR Cebu', 'Assessment for delinquent accounts.', 'CASH DIVISION', '2025-01-16 00:00:00', 'Mr. Rivera', 'U-R-G-E-N-T', 'Handled.', NULL, '2025-12-11 03:02:39', NULL),
+(14, 5, '14', '2025-01-17', 'PhilHealth', 'Letter for coordination meeting.', 'TORU DIVISION', '2025-01-17 00:00:00', 'Atty. Dizon', 'REPRESENT THIS OFFICE', 'Scheduled.', NULL, '2025-12-11 03:02:39', NULL),
+(15, 5, '15', '2025-01-18', 'GSIS Cebu', 'Document request for review.', NULL, '2026-01-05 00:00:00', NULL, NULL, '', NULL, '2025-12-11 03:02:39', NULL),
+(16, 5, '16', '2025-01-19', 'PNP Cebu City', 'Coordination for certification.', 'ADMIN DIVISION', '2025-01-19 00:00:00', 'Ms. Aquino', 'COMMENT/SAND/OR', 'Submitted to chief.', NULL, '2025-12-11 03:02:39', NULL),
+(17, 5, '17', '2025-01-20', 'CHED Region 7', 'Request for validation.', 'LICENSE DIVISION', '2025-01-20 00:00:00', 'Atty. Franco', 'APPROPRIATE ACTION', 'Processing.', NULL, '2025-12-11 03:02:39', NULL),
+(18, 5, '18', '2025-01-21', 'Lapu-Lapu City Hall', 'Support letter for project.', 'GRACE ATTY. TERENCE', '2025-01-21 00:00:00', 'Ms. Santos', 'TAKE UP WITH ME', 'For review.', NULL, '2025-12-11 03:02:39', NULL),
+(19, 5, '19', '2025-01-22', 'Barangay Cotcot', 'Clarification on tax dues.', 'LANDTAX DIVISION', '2025-01-22 00:00:00', 'Mr. Perez', 'APPROPRIATE ACTION', 'Forwarded.', NULL, '2025-12-11 03:02:39', NULL),
+(20, 5, '20', '2025-01-23', 'Cebu Water District', 'Follow-up on unpaid accounts.', 'CASH DIVISION', '2025-01-23 00:00:00', 'Ms. Gomez', 'U-R-G-E-N-T', NULL, NULL, '2025-12-11 03:02:39', NULL);
 
 -- --------------------------------------------------------
 
@@ -200,7 +202,7 @@ CREATE TABLE `documents` (
   `fund_type` varchar(100) DEFAULT NULL,
   `bank_channel` varchar(100) DEFAULT NULL,
   `check_date` datetime DEFAULT NULL,
-  `status` enum('In','Out','Check Out','Check Release') DEFAULT 'In',
+  `status` enum('Check Out','Check Release') DEFAULT NULL,
   `check_no` varchar(50) DEFAULT NULL,
   `transmittal_id` varchar(5) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
@@ -212,25 +214,24 @@ CREATE TABLE `documents` (
 
 INSERT INTO `documents` (`id`, `user_id`, `control_no`, `payee`, `description`, `amount`, `date_in`, `date_out`, `fund_type`, `bank_channel`, `check_date`, `status`, `check_no`, `transmittal_id`, `created_at`) VALUES
 (82, 5, '1', 'ABC Supplies', 'Office supplies purchase', 1500.00, '2025-01-02 09:25:00', NULL, 'General', NULL, NULL, NULL, NULL, NULL, '2025-12-11 03:57:28'),
-(83, 5, '2', 'XYZ Trading', 'Printer ink cartridges', 3200.00, '2025-01-03 10:12:00', NULL, 'General', NULL, NULL, NULL, NULL, '59405', '2025-12-11 03:57:28'),
-(84, 5, '3', 'Juan Dela Cruz', 'Honorarium payment', 5000.00, '2025-01-04 11:45:00', NULL, 'Special Fund', NULL, NULL, NULL, NULL, '59405', '2025-12-11 03:57:28'),
-(85, 5, '4', 'Mandaue Electric', 'Electric bill payment', 8400.00, '2025-01-05 08:55:00', NULL, 'General', NULL, NULL, NULL, NULL, '59405', '2025-12-11 03:57:28'),
-(86, 5, '5', 'City Water Dept.', 'Water bill payment', 2300.00, '2025-01-06 09:35:00', NULL, 'General', NULL, NULL, NULL, NULL, NULL, '2025-12-11 03:57:28'),
+(83, 5, '2', 'XYZ Trading', 'Printer ink cartridges', 3200.00, '2025-01-03 10:12:00', NULL, 'General', NULL, NULL, NULL, NULL, '46797', '2025-12-11 03:57:28'),
+(84, 5, '3', 'Juan Dela Cruz', 'Honorarium payment', 5000.00, '2025-01-04 11:45:00', NULL, 'Special Fund', NULL, NULL, NULL, NULL, '46797', '2025-12-11 03:57:28'),
+(85, 5, '4', 'Mandaue Electric', 'Electric bill payment', 8400.00, '2025-01-05 08:55:00', NULL, 'General', NULL, NULL, NULL, NULL, '01823', '2025-12-11 03:57:28'),
+(86, 5, '5', 'City Water Dept.', 'Water bill payment', 2300.00, '2025-01-06 09:35:00', NULL, 'General', NULL, NULL, NULL, NULL, '01823', '2025-12-11 03:57:28'),
 (87, 5, '6', 'Smart Communications', 'Internet payment', 2800.00, '2025-01-07 14:15:00', NULL, 'General', NULL, NULL, NULL, NULL, NULL, '2025-12-11 03:57:28'),
-(88, 5, '7', 'Globe Telecom', 'Mobile load subscription', 1500.00, '2025-01-08 13:40:00', NULL, 'General', NULL, NULL, NULL, NULL, NULL, '2025-12-11 03:57:28'),
 (89, 5, '8', 'ACLC Printing', 'Document printing services', 4200.00, '2025-01-09 15:22:00', NULL, 'General', NULL, NULL, NULL, NULL, NULL, '2025-12-11 03:57:28'),
-(90, 5, '9', 'Office Depot', 'Office chairs purchase', 12000.00, '2025-01-10 08:18:00', NULL, 'General', NULL, NULL, NULL, NULL, NULL, '2025-12-11 03:57:28'),
+(90, 5, '9', 'Office Depot', 'Office chairs purchase', 12000.00, '2025-01-10 08:18:00', '2025-12-17 12:48:17', 'General', NULL, NULL, NULL, NULL, NULL, '2025-12-11 03:57:28'),
 (91, 5, '10', 'Tech Builders', 'Laptop repair service', 3500.00, '2025-01-11 10:05:00', NULL, 'General', NULL, NULL, NULL, NULL, NULL, '2025-12-11 03:57:28'),
-(92, 5, '11', 'Green Supply Co.', 'Indoor plants for office', 2600.00, '2025-01-12 13:05:00', '2025-12-11 00:40:44', 'Special Fund', NULL, NULL, NULL, NULL, NULL, '2025-12-11 03:57:28'),
+(92, 5, '11', 'Green Supply Co.', 'Indoor plants for office', 2600.00, '2025-01-12 13:05:00', '2025-12-17 12:48:05', 'Special Fund', NULL, NULL, NULL, NULL, NULL, '2025-12-11 03:57:28'),
 (93, 5, '12', 'Mandaue Catering', 'Event catering service', 7500.00, '2025-01-13 09:48:00', '2025-12-11 00:40:41', 'General', NULL, NULL, NULL, NULL, NULL, '2025-12-11 03:57:28'),
-(94, 5, '13', 'City Courier', 'Courier delivery service', 900.00, '2025-01-14 10:14:00', '2025-12-11 00:40:36', 'General', NULL, NULL, NULL, NULL, NULL, '2025-12-11 03:57:28'),
+(94, 5, '13', 'City Courier', 'Courier delivery service', 900.00, '2025-01-14 10:14:00', '2025-12-11 00:40:36', 'General', NULL, NULL, NULL, NULL, '04113', '2025-12-11 03:57:28'),
 (95, 5, '14', 'Office Warehouse', 'Paper reams purchase', 1800.00, '2025-01-15 11:35:00', '2025-12-11 00:40:32', 'General', NULL, NULL, NULL, NULL, NULL, '2025-12-11 03:57:28'),
 (96, 5, '15', 'I.T Services Co.', 'Software license renewal', 12500.00, '2025-01-16 14:55:00', '2025-12-11 00:40:29', 'Special Fund', NULL, NULL, NULL, NULL, '47618', '2025-12-11 03:57:28'),
 (97, 5, '16', 'ACLC Rentals', 'Tent and chairs rental', 6500.00, '2025-01-17 15:33:00', '2025-12-11 00:40:26', 'General', NULL, NULL, NULL, NULL, '47618', '2025-12-11 03:57:28'),
 (98, 5, '17', 'Office Fixers', 'Aircon maintenance', 4200.00, '2025-01-18 08:22:00', '2025-12-11 00:40:23', 'General', NULL, NULL, NULL, NULL, NULL, '2025-12-11 03:57:28'),
 (99, 5, '18', 'Tech Parts', 'Computer parts purchase', 8500.00, '2025-01-19 09:10:00', '2025-12-11 00:40:20', 'General', NULL, NULL, NULL, NULL, '95250', '2025-12-11 03:57:28'),
 (100, 5, '19', 'Mandaue Transport', 'Vehicle fuel assistance', 4500.00, '2025-01-20 10:28:00', '2025-12-11 00:40:16', 'General', NULL, NULL, NULL, NULL, NULL, '2025-12-11 03:57:28'),
-(101, 5, '20', 'Security Guard Co.', 'Security service payment', 19000.00, '2025-01-21 11:40:00', '2025-12-11 00:40:01', 'Special Fund', 'Land Bank', '2025-12-11 00:00:00', 'Check Out', '31528139', '59540', '2025-12-11 03:57:28');
+(101, 5, '20', 'Security Guard Co.', 'Security service payment', 19000.00, '2025-01-21 11:40:00', '2025-12-11 00:40:01', 'Special Fund', 'Land Bank', '2025-12-11 00:00:00', 'Check Out', '31528139', '15970', '2025-12-11 03:57:28');
 
 -- --------------------------------------------------------
 
@@ -329,7 +330,16 @@ INSERT INTO `login_logs` (`id`, `user_id`, `username`, `role`, `login_time`) VAL
 (82, 3, 'encoder', 'encoder', '2025-12-11 05:16:02'),
 (83, 1, 'admin', 'admin', '2025-12-11 05:16:22'),
 (84, 5, 'mcky', 'encoder', '2025-12-11 05:28:43'),
-(85, 1, 'admin', 'admin', '2025-12-11 05:43:53');
+(85, 1, 'admin', 'admin', '2025-12-11 05:43:53'),
+(86, 1, 'admin', 'admin', '2025-12-17 01:56:17'),
+(87, 5, 'mcky', 'encoder', '2025-12-17 01:56:39'),
+(88, 5, 'mcky', 'encoder', '2025-12-27 09:31:36'),
+(89, 5, 'mcky', 'encoder', '2026-01-04 13:39:06'),
+(90, 1, 'admin', 'admin', '2026-01-04 17:33:43'),
+(91, 5, 'mcky', 'encoder', '2026-01-05 10:33:04'),
+(92, 1, 'admin', 'admin', '2026-01-05 16:54:46'),
+(93, 5, 'mcky', 'encoder', '2026-01-05 17:03:18'),
+(94, 1, 'admin', 'admin', '2026-01-05 17:07:34');
 
 -- --------------------------------------------------------
 
@@ -378,7 +388,7 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`id`, `first_name`, `middle_initial`, `last_name`, `username`, `email`, `password`, `role`, `status`, `permissions`, `created_at`) VALUES
 (1, 'Admin', 'A.', 'Administrator', 'admin', 'user1@example.com', 'admin123', 'admin', '', NULL, '2025-10-29 03:21:47'),
 (3, 'Example', 'M.', 'Sample', 'encoder', 'user3@example.com', 'encoder123', 'encoder', '', '[]', '2025-10-29 03:35:55'),
-(5, 'Neil', 'M.', 'Alferez', 'mcky', 'user5@example.com', 'neil123', 'encoder', '', '[\"voucher_records\",\"check_records\",\"communications_records\",\"activity_records\",\"certificate_records\"]', '2025-11-11 06:26:55'),
+(5, 'Neil', 'M.', 'Alferez', 'mcky', 'user5@example.com', 'neil123', 'encoder', 'Active', '[\"voucher_records\",\"check_records\",\"communications_records\",\"activity_records\",\"certificate_records\",\"delete_records\"]', '2025-11-11 06:26:55'),
 (6, 'Marc', 'M.', 'Epe', 'marcky', 'marc@gmail.com', 'marc123', 'encoder', 'Active', NULL, '2025-11-24 03:52:03'),
 (7, 'Johnna', 'M', 'Quevedo', 'johnna', 'johnna@gmail.com', 'johnna123', 'encoder', 'Active', NULL, '2025-11-24 11:05:04'),
 (10, 'Diane', 'M', 'Alferez', 'diane', 'diane@gmail.com', 'diane123', 'encoder', 'Active', '0', '2025-11-24 11:46:10');
@@ -411,7 +421,96 @@ INSERT INTO `user_activity_logs` (`id`, `user_id`, `full_name`, `action`, `modul
 (36, 5, 'Neil M. Alferez', 'Checked Out Document', 'Check Document Records', 101, '20', 'Document marked as checked out, Check Num: ', '2025-12-11 00:39:03'),
 (37, 5, 'Neil M. Alferez', 'Checked Out Document', 'Check Document Records', 101, '20', 'Document marked as checked out, Check Num', '2025-12-11 00:40:01'),
 (38, 5, 'Neil M. Alferez', 'Updated Out Form Details', 'Communication Records', 53, '4', 'Out form details updated, Communication ID: ', '2025-12-11 01:16:41'),
-(39, 5, 'Neil M. Alferez', 'Added Certificate Record', 'Certificate Records', 0, '16', 'New Certificate record added, Control No: 16.', '2025-12-11 01:25:41');
+(39, 5, 'Neil M. Alferez', 'Added Certificate Record', 'Certificate Records', 0, '16', 'New Certificate record added, Control No: 16.', '2025-12-11 01:25:41'),
+(40, 5, 'Neil M. Alferez', 'Added Voucher Record', 'Document Voucher Records', 102, '21', 'Document Voucher record added, Control No', '2025-12-17 09:57:40'),
+(41, 5, 'Neil M. Alferez', 'Marked Date Out', 'Document Voucher Records', 102, '21', 'Marked as Date Out, Control No: 21', '2025-12-17 09:58:02'),
+(42, 5, 'Neil M. Alferez', 'Added Voucher Record', 'Document Voucher Records', 103, '21', 'Document Voucher record added, Control No: 21', '2025-12-17 11:27:28'),
+(43, 5, 'Neil M. Alferez', 'Marked Date Out', 'Document Voucher Records', 103, '21', 'Marked as Date Out, Control No: 21', '2025-12-17 11:27:36'),
+(44, 5, 'Neil M. Alferez', 'Added Voucher Record', 'Document Voucher Records', 104, '21', 'Document Voucher record added, Control No: 21', '2025-12-17 11:28:40'),
+(45, 5, 'Neil M. Alferez', 'Added Voucher Record', 'Document Voucher Records', 105, '21', 'Document Voucher record added, Control No', '2025-12-17 11:33:07'),
+(46, 5, 'Neil M. Alferez', 'Added Voucher Record', 'Document Voucher Records', 106, '21', 'Document Voucher record added, Control No', '2025-12-17 11:33:09'),
+(47, 5, 'Neil M. Alferez', 'Added Voucher Record', 'Document Voucher Records', 107, '21', 'Document Voucher record added, Control No', '2025-12-17 11:33:10'),
+(48, 5, 'Neil M. Alferez', 'Added Voucher Record', 'Document Voucher Records', 108, '21', 'Document Voucher record added, Control No', '2025-12-17 11:33:11'),
+(49, 5, 'Neil M. Alferez', 'Added Voucher Record', 'Document Voucher Records', 109, '21', 'Document Voucher record added, Control No', '2025-12-17 11:33:11'),
+(50, 5, 'Neil M. Alferez', 'Added Voucher Record', 'Document Voucher Records', 110, '21', 'Document Voucher record added, Control No', '2025-12-17 11:33:11'),
+(51, 5, 'Neil M. Alferez', 'Added Voucher Record', 'Document Voucher Records', 111, '21', 'Document Voucher record added, Control No', '2025-12-17 11:33:11'),
+(52, 5, 'Neil M. Alferez', 'Added Voucher Record', 'Document Voucher Records', 112, '21', 'Document Voucher record added, Control No', '2025-12-17 11:33:12'),
+(53, 5, 'Neil M. Alferez', 'Added Voucher Record', 'Document Voucher Records', 113, '21', 'Document Voucher record added, Control No', '2025-12-17 11:33:12'),
+(54, 5, 'Neil M. Alferez', 'Added Voucher Record', 'Document Voucher Records', 114, '21', 'Document Voucher record added, Control No', '2025-12-17 11:33:12'),
+(55, 5, 'Neil M. Alferez', 'Added Voucher Record', 'Document Voucher Records', 115, '21', 'Document Voucher record added, Control No', '2025-12-17 11:33:12'),
+(56, 5, 'Neil M. Alferez', 'Added Voucher Record', 'Document Voucher Records', 116, '21', 'Document Voucher record added, Control No', '2025-12-17 11:33:12'),
+(57, 5, 'Neil M. Alferez', 'Added Voucher Record', 'Document Voucher Records', 117, '21', 'Document Voucher record added, Control No', '2025-12-17 11:33:12'),
+(58, 5, 'Neil M. Alferez', 'Added Voucher Record', 'Document Voucher Records', 118, '21', 'Document Voucher record added, Control No', '2025-12-17 11:33:13'),
+(59, 5, 'Neil M. Alferez', 'Added Voucher Record', 'Document Voucher Records', 119, '22', 'Document Voucher record added, Control No', '2025-12-17 11:34:27'),
+(60, 5, 'Neil M. Alferez', 'Added Voucher Record', 'Document Voucher Records', 120, '21', 'Document Voucher record added, Control No: 21', '2025-12-17 11:35:30'),
+(61, 5, 'Neil M. Alferez', 'Marked Date Out', 'Document Voucher Records', 120, '21', 'Marked as Date Out, Control No: 21', '2025-12-17 11:35:40'),
+(62, 5, 'Neil M. Alferez', 'Marked Date Out', 'Document Voucher Records', 92, '11', 'Marked as Date Out, Control No: 11', '2025-12-17 12:48:05'),
+(63, 5, 'Neil M. Alferez', 'Marked Date Out', 'Document Voucher Records', 90, '9', 'Marked as Date Out, Control No: 9', '2025-12-17 12:48:17'),
+(64, 5, 'Neil M. Alferez', 'Updated Out Form Details', 'Communication Records', 15, '15', 'Out form details updated, Communication ID: ', '2025-12-17 13:29:31'),
+(65, 5, 'Neil M. Alferez', 'Added Communication Record', 'Communication Records', 0, '21', 'New communication record added, Communication ID: 21.', '2026-01-04 22:42:48'),
+(66, 5, 'Neil M. Alferez', 'Updated Out Form Details', 'Communication Records', 61, '21', 'Out form details updated, Communication ID: 21', '2026-01-04 22:43:15'),
+(67, 5, 'Neil M. Alferez', 'Updated Out Form Details', 'Communication Records', 4, '4', 'Out form details updated, Communication ID: 4', '2026-01-04 22:50:20'),
+(68, 5, 'Neil M. Alferez', 'Updated Out Form Details', 'Communication Records', 3, '3', 'Out form details updated, Communication ID: 3', '2026-01-04 22:53:37'),
+(69, 5, 'Neil M. Alferez', 'Updated Out Form Details', 'Communication Records', 15, '15', 'Out form details updated, Communication ID: 15', '2026-01-04 23:49:57'),
+(70, 5, 'Neil M. Alferez', 'Added Communication Record', 'Communication Records', 0, '22', 'New communication record added, Communication ID: 22.', '2026-01-05 00:36:22'),
+(71, 5, 'Neil M. Alferez', 'Updated Out Form Details', 'Communication Records', 62, '22', 'Out form details updated, Communication ID: 22', '2026-01-05 00:37:12'),
+(72, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 62, '22', 'Communication record updated, ComID: 22', '2026-01-05 00:44:43'),
+(73, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 62, '22', 'Communication record updated, ComID: 22', '2026-01-05 00:44:58'),
+(74, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 62, '22', 'Communication record updated, ComID: 22', '2026-01-05 00:45:17'),
+(75, 5, 'Neil M. Alferez', 'Updated action in Show Indorsed mode', 'Communication Records', 15, '15', 'Communication record updated, ComID: 15 (Action taken recorded)', '2026-01-05 00:45:26'),
+(76, 5, 'Neil M. Alferez', 'Deleted Communication Record', 'Communication Records', 61, '21', 'Deleted communication record, ComID: 21', '2026-01-05 00:46:13'),
+(77, 5, 'Neil M. Alferez', 'Deleted Communication Record', 'Communication Records', 62, '22', 'Deleted communication record, ComID: 22', '2026-01-05 00:46:13'),
+(78, 5, 'Neil M. Alferez', 'Added Communication Record', 'Communication Records', 0, '21', 'New communication record added, Communication ID: 21.', '2026-01-05 00:46:25'),
+(79, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 63, '21', 'Communication record updated, ComID: 21', '2026-01-05 00:46:51'),
+(80, 5, 'Neil M. Alferez', 'Updated action in Show Indorsed mode', 'Communication Records', 63, '21', 'Communication record updated, ComID: 21 (Action taken recorded)', '2026-01-05 00:47:06'),
+(81, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 63, '21', 'Out form details updated, ComID: 21', '2026-01-05 01:02:11'),
+(82, 5, 'Neil M. Alferez', 'Added Communication Record', 'Communication Records', 0, '22', 'New communication record added, Communication ID: 22.', '2026-01-05 01:05:38'),
+(83, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 64, '22', 'Out form details updated, ComID: 22', '2026-01-05 01:05:52'),
+(84, 5, 'Neil M. Alferez', 'Took action on indorsed record', 'Communication Records', 64, '22', 'Action taken on indorsed record, duration: 5 hours 53 minutes, ComID: 22', '2026-01-05 01:06:03'),
+(85, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 15, '15', 'Out form details updated, ComID: 15', '2026-01-05 18:33:29'),
+(86, 5, 'Neil M. Alferez', 'Added Communication Record', 'Communication Records', 0, '23', 'New communication record added, Communication ID: 23.', '2026-01-05 18:33:52'),
+(87, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 63, '21', 'Out form details updated, ComID: 21', '2026-01-05 18:34:10'),
+(88, 5, 'Neil M. Alferez', 'Added Communication Record', 'Communication Records', 0, '21', 'New communication record added, Communication ID: 21.', '2026-01-05 18:36:29'),
+(89, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 66, '21', 'Out form details updated, ComID: 21', '2026-01-05 18:37:23'),
+(90, 5, 'Neil M. Alferez', 'Took action on indorsed record', 'Communication Records', 15, '15', 'Action taken on indorsed record, duration: 18 hours 38 minutes, ComID: 15', '2026-01-05 18:38:26'),
+(91, 5, 'Neil M. Alferez', 'Added Communication Record', 'Communication Records', 0, '22', 'New communication record added, Communication ID: 22.', '2026-01-05 18:54:56'),
+(92, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 67, '22', 'Out form details updated, ComID: 22', '2026-01-05 18:55:12'),
+(93, 5, 'Neil M. Alferez', 'Took action on indorsed record', 'Communication Records', 67, '22', 'Action taken on indorsed record, duration: 0 minutes, ComID: 22', '2026-01-05 18:57:41'),
+(94, 5, 'Neil M. Alferez', 'Took action on indorsed record', 'Communication Records', 66, '21', 'Action taken on indorsed record, duration: 19 hours 5 minutes, ComID: 21', '2026-01-05 19:05:53'),
+(95, 5, 'Neil M. Alferez', 'Added Communication Record', 'Communication Records', 0, '21', 'New communication record added, Communication ID: 21.', '2026-01-05 19:07:45'),
+(96, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 68, '21', 'Out form details updated, ComID: 21', '2026-01-05 19:07:57'),
+(97, 5, 'Neil M. Alferez', 'Took action on indorsed record', 'Communication Records', 68, '21', 'Action taken on indorsed record, duration: 1 day, ComID: 21', '2026-01-05 19:08:32'),
+(98, 5, 'Neil M. Alferez', 'Added Communication Record', 'Communication Records', 0, '21', 'New communication record added, Communication ID: 21.', '2026-01-05 19:16:36'),
+(99, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 69, '21', 'Out form details updated, ComID: 21', '2026-01-05 19:16:58'),
+(100, 5, 'Neil M. Alferez', 'Took action on indorsed record', 'Communication Records', 69, '21', 'Action taken on indorsed record, duration: N/A, ComID: 21', '2026-01-05 19:18:30'),
+(101, 5, 'Neil M. Alferez', 'Added Communication Record', 'Communication Records', 0, '22', 'New communication record added, Communication ID: 22.', '2026-01-05 19:20:31'),
+(102, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 70, '22', 'Out form details updated, ComID: 22', '2026-01-05 19:20:43'),
+(103, 5, 'Neil M. Alferez', 'Took action on indorsed record', 'Communication Records', 70, '22', 'Action taken on indorsed record, duration: 27 seconds, ComID: 22', '2026-01-05 19:21:10'),
+(104, 5, 'Neil M. Alferez', 'Added Communication Record', 'Communication Records', 0, '23', 'New communication record added, Communication ID: 23.', '2026-01-05 19:25:27'),
+(105, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 71, '23', 'Out form details updated, ComID: 23', '2026-01-05 19:25:38'),
+(106, 5, 'Neil M. Alferez', 'Took action on indorsed record', 'Communication Records', 71, '23', 'Action taken on indorsed record, duration: 11 minutes, ComID: 23', '2026-01-05 19:36:45'),
+(107, 5, 'Neil M. Alferez', 'Took action on indorsed record', 'Communication Records', 71, '23', 'Action taken on indorsed record, duration: 1 day 12 minutes, ComID: 23', '2026-01-05 19:37:45'),
+(108, 5, 'Neil M. Alferez', 'Added Communication Record', 'Communication Records', 0, '21', 'New communication record added, Communication ID: 21.', '2026-01-05 21:40:23'),
+(109, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 72, '21', 'Out form details updated, ComID: 21', '2026-01-05 21:40:38'),
+(110, 5, 'Neil M. Alferez', 'Took action on indorsed record', 'Communication Records', 72, '21', 'Action taken on indorsed record at 2026-01-05 21:41:02, ComID: 21', '2026-01-05 21:41:02'),
+(111, 5, 'Neil M. Alferez', 'Added Communication Record', 'Communication Records', 0, '22', 'New communication record added, Communication ID: 22.', '2026-01-05 22:17:46'),
+(112, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 73, '22', 'Out form details updated, ComID: 22', '2026-01-05 22:18:00'),
+(113, 5, 'Neil M. Alferez', 'Took action on indorsed record', 'Communication Records', 73, '22', 'Action taken on indorsed record at 2026-01-05 22:18:40 (Duration: 22 hours, 18 minutes ago), ComID: 22', '2026-01-05 22:18:40'),
+(114, 5, 'Neil M. Alferez', 'Added Communication Record', 'Communication Records', 0, '23', 'New communication record added, Communication ID: 23.', '2026-01-05 22:19:35'),
+(115, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 74, '23', 'Out form details updated, ComID: 23', '2026-01-05 22:19:56'),
+(116, 5, 'Neil M. Alferez', 'Took action on indorsed record', 'Communication Records', 74, '23', 'Action taken on indorsed record at 2026-01-05 22:32:21 (Duration: 22 hours, 32 minutes ago), ComID: 23', '2026-01-05 22:32:21'),
+(117, 5, 'Neil M. Alferez', 'Added Communication Record', 'Communication Records', 0, '24', 'New communication record added, Communication ID: 24.', '2026-01-05 22:37:14'),
+(118, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 75, '24', 'Out form details updated, ComID: 24', '2026-01-05 22:37:30'),
+(119, 5, 'Neil M. Alferez', 'Added Communication Record', 'Communication Records', 0, '25', 'New communication record added, Communication ID: 25.', '2026-01-05 23:00:17'),
+(120, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 76, '25', 'Out form details updated, ComID: 25', '2026-01-05 23:00:30'),
+(121, 5, 'Neil M. Alferez', 'Took action on indorsed record', 'Communication Records', 76, '25', 'Action taken on indorsed record at 2026-01-05 23:00:46 (Duration: 16 seconds ago), ComID: 25', '2026-01-05 23:00:46'),
+(122, 5, 'Neil M. Alferez', 'Added Communication Record', 'Communication Records', 0, '21', 'New communication record added, Communication ID: 21.', '2026-01-05 23:26:59'),
+(123, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 77, '21', 'Out form details updated, ComID: 21', '2026-01-05 23:27:19'),
+(124, 5, 'Neil M. Alferez', 'Added Communication Record', 'Communication Records', 0, '22', 'New communication record added, Communication ID: 22.', '2026-01-06 00:24:54'),
+(125, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 78, '22', 'Out form details updated, ComID: 22', '2026-01-06 00:25:11'),
+(126, 5, 'Neil M. Alferez', 'Updated Out Form details', 'Communication Records', 78, '22', 'Out form details updated, ComID: 22', '2026-01-06 00:25:26'),
+(127, 5, 'Neil M. Alferez', 'Deleted Voucher Record', 'Document Voucher Records', 120, '21', 'Deleted Voucher Record, Control No: 21', '2026-01-06 01:38:45'),
+(128, 5, 'Neil M. Alferez', 'Deleted Voucher Record', 'Document Voucher Records', 88, '7', 'Deleted Voucher Record, Control No: 7', '2026-01-06 01:41:28');
 
 -- --------------------------------------------------------
 
@@ -530,19 +629,19 @@ ALTER TABLE `certificate_records`
 -- AUTO_INCREMENT for table `communications`
 --
 ALTER TABLE `communications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=79;
 
 --
 -- AUTO_INCREMENT for table `documents`
 --
 ALTER TABLE `documents`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=102;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=121;
 
 --
 -- AUTO_INCREMENT for table `login_logs`
 --
 ALTER TABLE `login_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=86;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=95;
 
 --
 -- AUTO_INCREMENT for table `password_resets`
@@ -560,7 +659,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `user_activity_logs`
 --
 ALTER TABLE `user_activity_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=129;
 
 --
 -- AUTO_INCREMENT for table `website_settings`
