@@ -283,7 +283,7 @@ if ($comResult->num_rows > 0) {
                                                 <td>
                                                     <?php
                                                     if (!empty($row['date_routed'])) {
-                                                        echo date("M d, Y h:i A", strtotime($row['date_routed']));
+                                                        echo date("M d, Y", strtotime($row['date_routed']));
                                                     } else {
                                                         echo '-';
                                                     }
