@@ -6,13 +6,15 @@ async function printSelectedCheckTransmittal() {
         return;
     }
 
-    const ids = selected.map(cb => cb.value);
+    const ids = selected.map((cb) => cb.value);
 
     // STEP 1: Fetch full data for each ID
     const rowsData = [];
     try {
         for (let id of ids) {
-            const res = await fetch(`Controllers/CheckController.php?action=get_check_print&id=${id}`);
+            const res = await fetch(
+                `Controllers/CheckController.php?action=get_check_print&id=${id}`
+            );
             const data = await res.json();
             if (data.check_date && data.status) {
                 rowsData.push(data);
@@ -24,7 +26,11 @@ async function printSelectedCheckTransmittal() {
     }
 
     if (rowsData.length === 0) {
-        Swal.fire("Invalid Selection", "Only records with Check Date can be printed.", "error");
+        Swal.fire(
+            "Invalid Selection",
+            "Only records with Check Date can be printed.",
+            "error"
+        );
         return;
     }
 
@@ -34,11 +40,15 @@ async function printSelectedCheckTransmittal() {
         const response = await fetch("Controllers/TransmittalController.php", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ids })
+            body: JSON.stringify({ ids }),
         });
         const result = await response.json();
         if (!result.success) {
-            Swal.fire("Error", "Failed to generate transmittal number.", "error");
+            Swal.fire(
+                "Error",
+                "Failed to generate transmittal number.",
+                "error"
+            );
             return;
         }
         transmittalId = result.transmittal_id;
@@ -67,9 +77,15 @@ async function printSelectedCheckTransmittal() {
 
     // STEP 4: Print
     const now = new Date();
-    const dateStr = now.toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "numeric" });
+    const dateStr = now.toLocaleDateString("en-US", {
+        month: "numeric",
+        day: "numeric",
+        year: "numeric",
+    });
     const timeStr = now.toLocaleTimeString("en-US");
-    const userName = document.querySelector(".header-user strong").textContent.trim();
+    const userName = document
+        .querySelector(".header-user strong")
+        .textContent.trim();
 
     const content = `
         <div class="paper">
@@ -114,7 +130,7 @@ async function printSelectedCheckTransmittal() {
         </div>
     `;
 
-    const printWindow = window.open('', '', 'width=1200,height=700'); // wider window for landscape
+    const printWindow = window.open("", "", "width=1200,height=700"); // wider window for landscape
     printWindow.document.write(`
         <html>
         <head>

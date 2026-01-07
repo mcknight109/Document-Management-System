@@ -53,6 +53,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_check_print' && isset($_G
     $stmt = $conn->prepare("
         SELECT 
             control_no,
+            check_no,
             payee,
             description,
             amount,

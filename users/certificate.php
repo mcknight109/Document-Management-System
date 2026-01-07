@@ -112,7 +112,7 @@ $site_logo = $ws ? $ws['logo'] : 'assets/images/default-logo.png';
             <div class="profile-menu" id="profileMenu">
                 <div class="profile-menu-arrow"></div>
                 <ul>
-                    <li><a href="../document/users/profile.php"><i class="fas fa-user"></i> Profile</a></li>
+                    <li><a href="../users/profile.php"><i class="fas fa-user"></i> Profile</a></li>
                     <li><a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
             </div>

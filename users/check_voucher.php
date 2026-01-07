@@ -89,7 +89,7 @@ $currentDate = date("M d, Y");
                 <div class="profile-menu" id="profileMenu">
                     <div class="profile-menu-arrow"></div>
                     <ul>
-                        <li><a href="../document/users/profile.php"><i class="fas fa-user"></i> Profile</a></li>
+                        <li><a href="../users/profile.php"><i class="fas fa-user"></i> Profile</a></li>
                         <li><a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                     </ul>
                 </div>
@@ -139,7 +139,7 @@ $currentDate = date("M d, Y");
                             <td><?= htmlspecialchars($row['control_no']) ?></td>
                             <td><?= htmlspecialchars($row['payee']) ?></td>
                             <td><?= htmlspecialchars($row['bank_channel'] ?? '') ?></td>
-                            <td><?= $row['check_date'] ? date('M d, Y h:i A', strtotime($row['check_date'])) : '-' ?></td>
+                            <td><?= $row['check_date'] ? date('M d Y', strtotime($row['check_date'])) : '-' ?></td>
                             <td><?= htmlspecialchars($row['status']) ?></td>
                             <td>
                                 <?php if (!empty($row['check_date'])): ?>
@@ -322,6 +322,7 @@ $currentDate = date("M d, Y");
                 }
             });
         });
+
 
         // Open Check Record Modal
         function openCheckRecord() {

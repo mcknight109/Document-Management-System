@@ -1,12 +1,12 @@
 function printSlip() {
-    const rows = document.querySelectorAll('.rowCheckbox');
-    const checkedRows = Array.from(rows).filter(cb => cb.checked);
+    const rows = document.querySelectorAll(".rowCheckbox");
+    const checkedRows = Array.from(rows).filter((cb) => cb.checked);
 
     if (checkedRows.length > 1) {
         Swal.fire({
-            icon: 'warning',
-            title: 'Invalid Action',
-            text: 'Please select only one record to print.',
+            icon: "warning",
+            title: "Invalid Action",
+            text: "Please select only one record to print.",
         });
         return;
     }
@@ -20,14 +20,18 @@ function printSlip() {
     const remarks = document.getElementById("remarks").value;
 
     if (!com_id || !date_received || !sender || !description) {
-        Swal.fire("Missing Information", "Please select or fill out an IN Form first.", "warning");
+        Swal.fire(
+            "Missing Information",
+            "Please select or fill out an IN Form first.",
+            "warning"
+        );
         return;
     }
 
     const formattedDate = new Date(date_received).toLocaleDateString("en-US", {
         month: "2-digit",
         day: "2-digit",
-        year: "numeric"
+        year: "numeric",
     });
 
     // Define all possible indorse options
@@ -39,7 +43,7 @@ function printSlip() {
         "TORU DIVISION",
         "RECORDS SECTION",
         "BUS. TAX MAPPING SECTION",
-        "GRACE ATTY. TERENCE"
+        "GRACE ATTY. TERENCE",
     ];
 
     // Define all possible action options
@@ -50,22 +54,29 @@ function printSlip() {
         "REPRESENT THIS OFFICE",
         "TAKE UP WITH ME",
         "FURNISH COPY",
-        "FILE"
+        "FILE",
     ];
 
     // Generate indorse section with checkboxes
     let indorseSectionHTML = "";
-    indorseOptions.forEach(option => {
+    indorseOptions.forEach((option) => {
         // Check if this option matches the indorse_to value (case-insensitive)
-        const isChecked = indorse_to && option.toLowerCase().includes(indorse_to.toLowerCase()) ? "✓" : "□";
+        const isChecked =
+            indorse_to &&
+            option.toLowerCase().includes(indorse_to.toLowerCase())
+                ? "✓"
+                : "□";
         indorseSectionHTML += `${isChecked} ${option}<br>`;
     });
 
     // Generate action section with checkboxes
     let actionSectionHTML = "";
-    actionOptions.forEach(option => {
+    actionOptions.forEach((option) => {
         // Check if this option matches the action value (case-insensitive)
-        const isChecked = action && option.toLowerCase().includes(action.toLowerCase()) ? "✓" : "□";
+        const isChecked =
+            action && option.toLowerCase().includes(action.toLowerCase())
+                ? "✓"
+                : "□";
         actionSectionHTML += `${isChecked} ${option}<br>`;
     });
 
@@ -73,8 +84,8 @@ function printSlip() {
     let remarksHTML = "";
     if (remarks && remarks.trim() !== "") {
         // Split remarks by lines and create underlined format
-        const remarksLines = remarks.split('\n');
-        remarksLines.forEach(line => {
+        const remarksLines = remarks.split("\n");
+        remarksLines.forEach((line) => {
             if (line.trim() !== "") {
                 remarksHTML += `<div style="margin-bottom: 5px;">${line}</div>`;
             }

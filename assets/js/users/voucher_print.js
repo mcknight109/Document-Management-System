@@ -7,7 +7,7 @@ async function printSelectedTransmittal() {
     }
 
     // Collect selected IDs
-    const ids = selected.map(cb => cb.value);
+    const ids = selected.map((cb) => cb.value);
 
     // === STEP 3: Request new Transmittal ID + Update DB ===
     let result;
@@ -15,15 +15,18 @@ async function printSelectedTransmittal() {
         const response = await fetch("Controllers/TransmittalController.php", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ids })
+            body: JSON.stringify({ ids }),
         });
-                
+
         result = await response.json();
         if (!result.success) {
-            Swal.fire("Error", "Failed to generate transmittal number.", "error");
+            Swal.fire(
+                "Error",
+                "Failed to generate transmittal number.",
+                "error"
+            );
             return;
         }
-
     } catch (e) {
         Swal.fire("Error", "Server not responding.", "error");
         return;
@@ -36,12 +39,11 @@ async function printSelectedTransmittal() {
     const navSpan = document.querySelector(".navbar .left span");
     if (navSpan) navSpan.textContent = transmittalId;
 
-
     // Build rows HTML (unchanged)
     let rowsHTML = "";
     let count = 0;
 
-    selected.forEach(row => {
+    selected.forEach((row) => {
         const col = row.closest("tr").children;
         count++;
         rowsHTML += `
@@ -58,11 +60,17 @@ async function printSelectedTransmittal() {
 
     // Current date/time
     const now = new Date();
-    const dateStr = now.toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "numeric" });
+    const dateStr = now.toLocaleDateString("en-US", {
+        month: "numeric",
+        day: "numeric",
+        year: "numeric",
+    });
     const timeStr = now.toLocaleTimeString("en-US");
 
     // Fetch user name
-    const userName = document.querySelector(".header-user strong").textContent.trim();
+    const userName = document
+        .querySelector(".header-user strong")
+        .textContent.trim();
 
     const content = `
         <div class="paper">
@@ -106,7 +114,7 @@ async function printSelectedTransmittal() {
         </div>
     `;
 
-    const printWindow = window.open('', '', 'width=900,height=600');
+    const printWindow = window.open("", "", "width=900,height=600");
     printWindow.document.write(`
         <html>
         <head>

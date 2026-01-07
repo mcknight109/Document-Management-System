@@ -1,14 +1,54 @@
 function numberToWords(num) {
-    const ones = ["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine"];
-    const teens = ["Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
-    const tens = ["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
+    const ones = [
+        "",
+        "One",
+        "Two",
+        "Three",
+        "Four",
+        "Five",
+        "Six",
+        "Seven",
+        "Eight",
+        "Nine",
+    ];
+    const teens = [
+        "Ten",
+        "Eleven",
+        "Twelve",
+        "Thirteen",
+        "Fourteen",
+        "Fifteen",
+        "Sixteen",
+        "Seventeen",
+        "Eighteen",
+        "Nineteen",
+    ];
+    const tens = [
+        "",
+        "",
+        "Twenty",
+        "Thirty",
+        "Forty",
+        "Fifty",
+        "Sixty",
+        "Seventy",
+        "Eighty",
+        "Ninety",
+    ];
 
     function convert(n) {
         if (n < 10) return ones[n];
         if (n < 20) return teens[n - 10];
-        if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 ? " " + ones[n % 10] : "");
-        if (n < 1000) return ones[Math.floor(n / 100)] + " Hundred " + convert(n % 100);
-        if (n < 1000000) return convert(Math.floor(n / 1000)) + " Thousand " + convert(n % 1000);
+        if (n < 100)
+            return (
+                tens[Math.floor(n / 10)] + (n % 10 ? " " + ones[n % 10] : "")
+            );
+        if (n < 1000)
+            return ones[Math.floor(n / 100)] + " Hundred " + convert(n % 100);
+        if (n < 1000000)
+            return (
+                convert(Math.floor(n / 1000)) + " Thousand " + convert(n % 1000)
+            );
         return "";
     }
 
@@ -16,20 +56,31 @@ function numberToWords(num) {
 }
 
 function printCheck() {
-
     const selected = document.querySelector(".record-checkbox:checked");
     if (!selected) {
-        Swal.fire("No Selection", "Please select one record to print.", "warning");
+        Swal.fire(
+            "No Selection",
+            "Please select one record to print.",
+            "warning"
+        );
         return;
     }
 
     const docId = selected.value;
 
     fetch(`Controllers/CheckController.php?action=get_check_print&id=${docId}`)
-        .then(res => res.json())
-        .then(data => {
+        .then((res) => res.json())
+        .then((data) => {
+            if (!data.check_date) {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Invalid Action",
+                    text: "This record does not have a Check Date yet.",
+                });
+                return;
+            }
 
-            const win = window.open('', '_blank', 'width=900,height=600');
+            const win = window.open("", "_blank", "width=900,height=600");
             if (!win) {
                 Swal.fire("Popup Blocked", "Please allow popups.", "warning");
                 return;
@@ -126,7 +177,7 @@ function printCheck() {
         .date-value {
             font-size: 15px;
             font-weight: bold;
-            height: 14px;
+            height: 8px;
         }
 
         .payee-amount-row {
@@ -137,6 +188,7 @@ function printCheck() {
         }
         .payee-section {
             flex: 1;
+            font-weight: bold;
             font-size: 12px;
         }
         .payee-line {
@@ -146,6 +198,7 @@ function printCheck() {
             font-size: 15px;
             font-weight: bold;
             padding-left: 10px;
+            letter-spacing: 4px;
         }
         .amount-section {
             display: flex;
@@ -159,9 +212,10 @@ function printCheck() {
         .amount-box {
             border: 1px solid black;
             width: 200px;
-            height: 22px;
+            height: 20px;
             background: white;
-            text-align: center;
+            text-align: center; 
+            padding-top: 3px;
         }
         .amount-row {
             font-size: 12px;
@@ -175,6 +229,7 @@ function printCheck() {
             font-size: 15px;
             font-weight: bold;
             padding-left: 10px;
+            letter-spacing: 4px;
         }
 
         .bottom-section {
@@ -228,7 +283,9 @@ function printCheck() {
         <div class="controlBox">
             <div class="label-box">CHECK NO.</div>
             <div class="check-number">
-                ${checkNoDigits.map(d => `<div class="check-box">${d}</div>`).join("")}
+                ${checkNoDigits
+                    .map((d) => `<div class="check-box">${d}</div>`)
+                    .join("")}
             </div>
         </div>
 
@@ -240,7 +297,7 @@ function printCheck() {
 
         <div class="date-part">
             <span class="date-value">${dd}</span>
-            <span>__________</span>
+            <span style="height: ;">__________</span>
         </div>
 
         <span>/</span>

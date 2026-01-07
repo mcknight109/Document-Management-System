@@ -70,11 +70,11 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            line-height: 1; 
+            line-height: 1;     
         }
 
         .date-value {
-            font-size: 18px;
+            font-size: 15px;
             font-weight: bold;
             height: 14px;
         }
@@ -88,7 +88,13 @@
         .payee-section {
             flex: 1;
             font-size: 12px;
+            font-weight: bold;
         }
+
+        .payee-section strong {
+
+        }
+
         .payee-line {
             border-bottom: 1px solid black;
             display: inline-block;
@@ -96,6 +102,7 @@
             font-size: 15px;
             font-weight: bold;
             padding-left: 10px;
+            letter-spacing: 4px;
         }
         .amount-section {
             display: flex;
@@ -103,7 +110,7 @@
             gap: 5px;
         }
         .p-symbol {
-            font-size: 18px;
+            font-size: 1px;
             font-weight: bold;
         }
         .amount-box {
@@ -125,9 +132,8 @@
             font-size: 15px;
             font-weight: bold;
             padding-left: 10px;
+            letter-spacing: 4px;
         }
-
-        
 
         .bottom-section {
             display: flex;
@@ -180,7 +186,9 @@
         <div class="controlBox">
             <div class="label-box">CHECK NO.</div>
             <div class="check-number">
-                ${checkNoDigits.map(d => `<div class="check-box">${d}</div>`).join("")}
+                ${checkNoDigits
+                    .map((d) => `<div class="check-box">${d}</div>`)
+                    .join("")}
             </div>
         </div>
 
@@ -191,21 +199,21 @@
         <span>DATE:</span>
 
         <div class="date-part">
-            <span class="date-value">20</span>
+            <span class="date-value">${dd}</span>
             <span>__________</span>
         </div>
 
         <span>/</span>
 
         <div class="date-part">
-            <span class="date-value">20</span>
+            <span class="date-value">${mm}</span>
             <span>__________</span>
         </div>
 
         <span>/</span>
 
         <div class="date-part">
-            <span class="date-value">20</span>
+            <span class="date-value">${yy}</span>
             <span>__________</span>
         </div>
     </div>
@@ -219,7 +227,7 @@
     <div class="payee-amount-row">
         <div class="payee-section">
             <strong>NAME OF <br>THE PAYEE:</strong>
-            <span class="payee-line">${data.payee || ""}</span>
+            <span class="payee-line">Neil M. Alferez</span>
         </div>
 
         <div class="amount-section">
@@ -230,7 +238,7 @@
 
     <div class="amount-row">
         <strong>PESOS:</strong>
-        <span class="amount-line">${amountWords}</span>
+        <span class="amount-line">ONE HUNDRED TOUSOUNDS</span>
     </div>
 
     <div class="bottom-section">
